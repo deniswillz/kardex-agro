@@ -257,9 +257,7 @@ const App: React.FC = () => {
                         </button>
                     </form>
 
-                    <p className="text-center text-slate-500 text-xs mt-6">
-                        Usuário padrão: <strong>admin</strong>
-                    </p>
+
                 </div>
             </div>
         );
