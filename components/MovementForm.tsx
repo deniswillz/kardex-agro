@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, QrCode, X, Save, ArrowLeft, User, Calendar, MapPin, Hash, Package, AlertCircle, ArrowRightLeft, Send, LogOut } from 'lucide-react';
+import { Camera, QrCode, X, Save, ArrowLeft, User, Calendar, MapPin, Hash, Package, AlertCircle, ArrowRightLeft, Send, LogOut, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Transaction, MovementType, OperationType, WAREHOUSES, User as UserType } from '../types';
 
 interface MovementFormProps {
@@ -11,6 +11,13 @@ interface MovementFormProps {
   initialData?: Transaction | null;
   prefill?: { code: string; warehouse: string; address?: string };
   currentUser?: UserType;
+}
+
+interface AlertModal {
+  show: boolean;
+  type: 'error' | 'warning' | 'success';
+  title: string;
+  message: string;
 }
 
 const MAIN_WAREHOUSES = ['01', '20', '22'];
@@ -31,6 +38,11 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [currentStock, setCurrentStock] = useState<number | null>(null);
+  const [alertModal, setAlertModal] = useState<AlertModal>({ show: false, type: 'error', title: '', message: '' });
+
+  const showAlert = (type: 'error' | 'warning' | 'success', title: string, message: string) => {
+    setAlertModal({ show: true, type, title, message });
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,33 +124,33 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!code || !name || quantity === '' || !originWarehouse) {
-      alert("Por favor, preencha todos os campos obrigatórios (*)");
+      showAlert('warning', 'Campos Obrigatórios', 'Por favor, preencha todos os campos obrigatórios (*)');
       return;
     }
 
     if (Number(quantity) <= 0) {
-      alert("A quantidade deve ser maior que zero.");
+      showAlert('warning', 'Quantidade Inválida', 'A quantidade deve ser maior que zero.');
       return;
     }
 
     // For SAIDA, require destination warehouse and check stock
     if (type === 'SAIDA' && opType === 'MOVIMENTACAO') {
       if (!destWarehouse) {
-        alert("Por favor, selecione o Armazém de Destino.");
+        showAlert('warning', 'Destino Obrigatório', 'Por favor, selecione o Armazém de Destino.');
         return;
       }
       // Permite mesmo armazém se os endereços forem diferentes
       if (originWarehouse === destWarehouse && address === destAddress) {
-        alert("A Origem e o Destino não podem ser o mesmo armazém/endereço. Altere o endereço de destino.");
+        showAlert('warning', 'Destino Inválido', 'A Origem e o Destino não podem ser o mesmo armazém/endereço. Altere o endereço de destino.');
         return;
       }
       // Verifica se tem saldo suficiente na origem
       if (currentStock !== null && Number(quantity) > currentStock) {
-        alert(`Saldo insuficiente! Disponível: ${currentStock}. Quantidade solicitada: ${quantity}`);
+        showAlert('error', 'Saldo Insuficiente', `Não há saldo suficiente para esta operação.\n\n📦 Disponível: ${currentStock} ${unit}\n📤 Solicitado: ${quantity} ${unit}`);
         return;
       }
       if (currentStock === null || currentStock <= 0) {
-        alert("Não há saldo disponível nesta localização para realizar a saída.");
+        showAlert('error', 'Sem Estoque', 'Não há saldo disponível nesta localização para realizar a saída.');
         return;
       }
     }
@@ -390,6 +402,37 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           </button>
         </div>
       </form>
+
+      {/* Modal de Alerta Estilizado */}
+      {alertModal.show && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up">
+            <div className={`p-6 ${alertModal.type === 'error' ? 'bg-red-50' : alertModal.type === 'warning' ? 'bg-amber-50' : 'bg-emerald-50'}`}>
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-xl ${alertModal.type === 'error' ? 'bg-red-100 text-red-600' : alertModal.type === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                  {alertModal.type === 'error' ? <AlertCircle size={28} /> : alertModal.type === 'warning' ? <AlertTriangle size={28} /> : <CheckCircle size={28} />}
+                </div>
+                <div className="flex-1">
+                  <h3 className={`text-lg font-black uppercase tracking-tight mb-2 ${alertModal.type === 'error' ? 'text-red-800' : alertModal.type === 'warning' ? 'text-amber-800' : 'text-emerald-800'}`}>
+                    {alertModal.title}
+                  </h3>
+                  <p className="text-sm text-slate-600 whitespace-pre-line leading-relaxed">
+                    {alertModal.message}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 bg-white border-t border-slate-100">
+              <button
+                onClick={() => setAlertModal({ ...alertModal, show: false })}
+                className={`w-full py-3 rounded-xl font-black text-sm uppercase tracking-widest text-white transition-all active:scale-[0.98] ${alertModal.type === 'error' ? 'bg-red-600 hover:bg-red-700' : alertModal.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+              >
+                Entendi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

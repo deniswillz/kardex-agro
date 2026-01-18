@@ -21,7 +21,7 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
 
   const stockData = useMemo(() => {
     const map: Record<string, InventoryItem> = {};
-    const lastCounts: Record<string, { date: string, quantity: number, ts: number }> = {};
+    const lastCounts: Record<string, { date: string, quantity: number, ts: number, balanceAtCount: number }> = {};
 
     transactions.forEach(t => {
       if (!MAIN_WAREHOUSES.includes(t.warehouse)) return;
@@ -60,8 +60,19 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
           }
         }
       } else if (t.operationType === 'CONTAGEM') {
+        // Calcula o saldo do sistema NO MOMENTO da contagem
+        const balanceAtCountTime = transactions
+          .filter(tx =>
+            tx.code === t.code &&
+            tx.warehouse === t.warehouse &&
+            (tx.address || '').trim().toUpperCase() === normalizedAddress &&
+            tx.operationType === 'MOVIMENTACAO' &&
+            tx.timestamp <= t.timestamp
+          )
+          .reduce((acc, tx) => tx.type === 'ENTRADA' ? acc + tx.quantity : acc - tx.quantity, 0);
+
         if (!lastCounts[key] || t.timestamp > lastCounts[key].ts) {
-          lastCounts[key] = { date: t.date, quantity: t.quantity, ts: t.timestamp };
+          lastCounts[key] = { date: t.date, quantity: t.quantity, ts: t.timestamp, balanceAtCount: balanceAtCountTime };
           map[key].lastCount = t.date;
         }
       }
@@ -77,7 +88,8 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
     return Object.values(map).map(item => {
       const lastCountData = lastCounts[item.key];
       const isCritical = minStocks[item.code] > 0 && globalBalances[item.code] <= minStocks[item.code];
-      const isDivergent = lastCountData !== undefined && lastCountData.quantity !== item.balance;
+      // Divergência: contagem ≠ saldo do sistema NO MOMENTO da contagem
+      const isDivergent = lastCountData !== undefined && lastCountData.quantity !== lastCountData.balanceAtCount;
 
       return {
         ...item,
