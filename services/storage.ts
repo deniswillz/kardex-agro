@@ -195,7 +195,7 @@ export const loadUsers = (): User[] => {
   try {
     const data = localStorage.getItem(USERS_KEY);
     return data ? JSON.parse(data) : [
-      { id: 'admin-01', name: 'Administrador Nano', password: 'admin', profile: 'ADMIN', active: true, lastLogin: Date.now() }
+      { id: 'admin-01', name: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }
     ];
   } catch (error) {
     return [];
