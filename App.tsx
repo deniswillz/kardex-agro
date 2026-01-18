@@ -46,6 +46,23 @@ const App: React.FC = () => {
                 ]);
                 setTransactions(savedTransactions);
                 setUsers(savedUsers);
+
+                // Restaurar sessão salva
+                const savedSession = localStorage.getItem('kardex_session');
+                if (savedSession) {
+                    try {
+                        const sessionUser = JSON.parse(savedSession);
+                        // Verificar se usuário ainda existe e está ativo
+                        const validUser = savedUsers.find(u => u.id === sessionUser.id && u.active);
+                        if (validUser) {
+                            setCurrentUser(validUser);
+                        } else {
+                            localStorage.removeItem('kardex_session');
+                        }
+                    } catch {
+                        localStorage.removeItem('kardex_session');
+                    }
+                }
             } catch (err) {
                 console.error('Failed to load data:', err);
             } finally {
@@ -65,7 +82,10 @@ const App: React.FC = () => {
         e.preventDefault();
         const user = users.find(u => u.login === loginForm.name && u.password === loginForm.password && u.active);
         if (user) {
-            setCurrentUser({ ...user, lastLogin: Date.now() });
+            const loggedUser = { ...user, lastLogin: Date.now() };
+            setCurrentUser(loggedUser);
+            // Salvar sessão no localStorage
+            localStorage.setItem('kardex_session', JSON.stringify(loggedUser));
             const updatedUsers = users.map(u => u.id === user.id ? { ...u, lastLogin: Date.now() } : u);
             setUsers(updatedUsers);
             await saveUsers(updatedUsers);
@@ -274,19 +294,19 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-white flex flex-col">
             {/* TOP HEADER - Verde Escuro */}
             <header className="fixed top-0 left-0 right-0 h-14 bg-primary-600 z-50 flex items-center justify-between px-4 lg:px-6 shadow-md">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 lg:gap-3">
                     <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center font-black text-primary-600 text-sm">
                         N
                     </div>
                     <span className="font-black text-white text-lg tracking-tight uppercase">NANO</span>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 lg:gap-4">
                     <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest hidden sm:block">USUÁRIO NANO</span>
-                    <span className="text-sm text-white font-bold">{currentUser.name}</span>
-                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-black text-sm">
+                    <span className="text-xs lg:text-sm text-white font-bold truncate max-w-[100px] lg:max-w-none">{currentUser.name}</span>
+                    <div className="w-7 h-7 lg:w-8 lg:h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-black text-xs lg:text-sm flex-shrink-0">
                         {currentUser.name.charAt(0)}
                     </div>
-                    <button onClick={() => setCurrentUser(null)} className="p-2 text-white/70 hover:text-white transition-colors hidden lg:block">
+                    <button onClick={() => { localStorage.removeItem('kardex_session'); setCurrentUser(null); }} className="p-2 text-white/70 hover:text-white transition-colors hidden lg:block">
                         <LogOut size={18} />
                     </button>
                 </div>
@@ -324,12 +344,12 @@ const App: React.FC = () => {
             </aside>
 
             {/* Mobile Header */}
-            <div className="lg:hidden fixed top-14 left-0 right-0 bg-white border-b border-slate-200 p-2 z-40 flex items-center justify-between">
-                <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-slate-600">
-                    {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            <div className="lg:hidden fixed top-14 left-0 right-0 bg-white border-b border-slate-200 px-3 py-2 z-40 flex items-center gap-2">
+                <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-slate-600 -ml-2">
+                    {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
                 </button>
-                <span className="text-xs font-black text-slate-600 uppercase">{view === 'DASHBOARD' ? 'Dashboard' : view === 'STOCK' ? 'Estoque' : view === 'HISTORY' ? 'Histórico' : view === 'NEW' ? 'Lançamento' : view === 'INVENTORY' ? 'Inventários' : 'Config'}</span>
-                <div className="w-10"></div>
+                <span className="flex-1 text-center text-sm font-black text-slate-700 uppercase tracking-wide">{view === 'DASHBOARD' ? 'Dashboard' : view === 'STOCK' ? 'Estoque' : view === 'HISTORY' ? 'Histórico' : view === 'NEW' ? 'Lançamento' : view === 'INVENTORY' ? 'Inventários' : 'Config'}</span>
+                <div className="w-8"></div>
             </div>
 
             {/* Mobile Menu */}
@@ -359,7 +379,7 @@ const App: React.FC = () => {
                                 <SettingsIcon size={20} /> Configuração
                             </button>
                         )}
-                        <button onClick={() => setCurrentUser(null)} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-red-300 bg-white/10 text-left mt-8">
+                        <button onClick={() => { localStorage.removeItem('kardex_session'); setCurrentUser(null); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-red-300 bg-white/10 text-left mt-8">
                             <LogOut size={20} /> Sair
                         </button>
                     </nav>
@@ -367,7 +387,7 @@ const App: React.FC = () => {
             )}
 
             {/* Main Content */}
-            <main className="flex-1 lg:ml-56 mt-14 lg:mt-14 pt-12 lg:pt-0 p-4 lg:p-8 bg-slate-50 min-h-[calc(100vh-56px)]">
+            <main className="flex-1 lg:ml-56 mt-14 lg:mt-14 p-4 lg:p-8 pb-24 lg:pb-8 bg-slate-50 min-h-[calc(100vh-56px)]">
                 {view === 'DASHBOARD' && (
                     <div className="space-y-6">
                         <StatsCards stats={stats} timeFilter={timeFilter} setTimeFilter={setTimeFilter} />
@@ -438,26 +458,26 @@ const App: React.FC = () => {
             />
 
             {/* Mobile Bottom Navigation */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-2 flex justify-around z-40 shadow-lg">
-                <button onClick={() => setView('DASHBOARD')} className={`flex flex-col items-center gap-1 p-2 rounded-xl ${view === 'DASHBOARD' ? 'text-primary-600' : 'text-slate-400'}`}>
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex justify-around z-40 shadow-lg">
+                <button onClick={() => setView('DASHBOARD')} className={`flex flex-col items-center gap-0.5 p-2 rounded-xl min-w-[56px] ${view === 'DASHBOARD' ? 'text-primary-600' : 'text-slate-400'}`}>
                     <LayoutDashboard size={20} />
-                    <span className="text-[8px] font-black uppercase">Home</span>
+                    <span className="text-[9px] font-bold uppercase">Home</span>
                 </button>
-                <button onClick={() => setView('STOCK')} className={`flex flex-col items-center gap-1 p-2 rounded-xl ${view === 'STOCK' ? 'text-primary-600' : 'text-slate-400'}`}>
+                <button onClick={() => setView('STOCK')} className={`flex flex-col items-center gap-0.5 p-2 rounded-xl min-w-[56px] ${view === 'STOCK' ? 'text-primary-600' : 'text-slate-400'}`}>
                     <BarChart3 size={20} />
-                    <span className="text-[8px] font-black uppercase">Saldo</span>
+                    <span className="text-[9px] font-bold uppercase">Saldo</span>
                 </button>
-                <button onClick={() => { setEditingTransaction(null); setPrefillData(undefined); setView('NEW'); }} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-primary-600 text-white -mt-6 shadow-lg shadow-primary-500/30">
-                    <PlusCircle size={24} />
-                    <span className="text-[8px] font-black uppercase">Novo</span>
+                <button onClick={() => { setEditingTransaction(null); setPrefillData(undefined); setView('NEW'); }} className="flex flex-col items-center gap-0.5 p-2 px-4 rounded-2xl bg-primary-600 text-white -mt-4 shadow-lg shadow-primary-500/30 min-w-[56px]">
+                    <PlusCircle size={22} />
+                    <span className="text-[9px] font-bold uppercase">Novo</span>
                 </button>
-                <button onClick={() => setView('HISTORY')} className={`flex flex-col items-center gap-1 p-2 rounded-xl ${view === 'HISTORY' ? 'text-primary-600' : 'text-slate-400'}`}>
+                <button onClick={() => setView('HISTORY')} className={`flex flex-col items-center gap-0.5 p-2 rounded-xl min-w-[56px] ${view === 'HISTORY' ? 'text-primary-600' : 'text-slate-400'}`}>
                     <History size={20} />
-                    <span className="text-[8px] font-black uppercase">Histórico</span>
+                    <span className="text-[9px] font-bold uppercase">Histórico</span>
                 </button>
-                <button onClick={() => setView('INVENTORY')} className={`flex flex-col items-center gap-1 p-2 rounded-xl ${view === 'INVENTORY' ? 'text-primary-600' : 'text-slate-400'}`}>
+                <button onClick={() => setView('INVENTORY')} className={`flex flex-col items-center gap-0.5 p-2 rounded-xl min-w-[56px] ${view === 'INVENTORY' ? 'text-primary-600' : 'text-slate-400'}`}>
                     <ClipboardList size={20} />
-                    <span className="text-[8px] font-black uppercase">Inventário</span>
+                    <span className="text-[9px] font-bold uppercase">Inventário</span>
                 </button>
             </nav>
         </div>
