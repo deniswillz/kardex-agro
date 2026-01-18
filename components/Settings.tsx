@@ -37,6 +37,7 @@ export const Settings: React.FC<SettingsProps> = ({
     const newUser: User = {
       id: editingUser?.id || crypto.randomUUID(),
       name: formData.get('name') as string,
+      login: formData.get('login') as string,
       password: formData.get('password') as string,
       profile: formData.get('profile') as UserProfile,
       active: true,
@@ -257,8 +258,12 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nome Completo (Login)</label>
-                <input name="name" defaultValue={editingUser.name} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-primary-500" />
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nome Completo</label>
+                <input name="name" defaultValue={editingUser.name} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-primary-500" placeholder="Ex: João Silva" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Login (para autenticação)</label>
+                <input name="login" defaultValue={editingUser.login || editingUser.name} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-primary-500" placeholder="Ex: joao.silva" />
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Senha de Acesso</label>

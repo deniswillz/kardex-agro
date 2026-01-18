@@ -5,7 +5,8 @@ export type UserProfile = 'ADMIN' | 'OPERADOR' | 'AUDITOR';
 
 export interface User {
   id: string;
-  name: string;
+  name: string; // Nome de exibição
+  login: string; // Login para autenticação
   password?: string;
   profile: UserProfile;
   lastLogin?: number;

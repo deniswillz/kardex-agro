@@ -63,14 +63,14 @@ const App: React.FC = () => {
     // Login handler
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        const user = users.find(u => u.name === loginForm.name && u.password === loginForm.password && u.active);
+        const user = users.find(u => u.login === loginForm.name && u.password === loginForm.password && u.active);
         if (user) {
             setCurrentUser({ ...user, lastLogin: Date.now() });
             const updatedUsers = users.map(u => u.id === user.id ? { ...u, lastLogin: Date.now() } : u);
             setUsers(updatedUsers);
             await saveUsers(updatedUsers);
         } else {
-            alert('Usuário ou senha inválidos!');
+            alert('Login ou senha inválidos!');
         }
     };
 
@@ -199,14 +199,14 @@ const App: React.FC = () => {
                     <form onSubmit={handleLogin} className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                                <User size={12} className="inline mr-1" /> Usuário
+                                <User size={12} className="inline mr-1" /> Login
                             </label>
                             <input
                                 type="text"
                                 value={loginForm.name}
                                 onChange={(e) => setLoginForm({ ...loginForm, name: e.target.value })}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-bold outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-                                placeholder="Nome do usuário"
+                                placeholder="Seu login"
                                 required
                             />
                         </div>
@@ -241,99 +241,95 @@ const App: React.FC = () => {
 
     // Main App
     return (
-        <div className="min-h-screen bg-slate-100 flex">
-            {/* Sidebar - Desktop */}
-            <aside className="hidden lg:flex flex-col w-72 bg-slate-900 text-white p-6 fixed h-full z-30">
-                <div className="flex items-center gap-3 mb-10">
-                    <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Package size={22} />
+        <div className="min-h-screen bg-white flex flex-col">
+            {/* TOP HEADER - Verde Escuro */}
+            <header className="fixed top-0 left-0 right-0 h-14 bg-primary-600 z-50 flex items-center justify-between px-4 lg:px-6 shadow-md">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center font-black text-primary-600 text-sm">
+                        N
                     </div>
-                    <div>
-                        <h1 className="text-lg font-black tracking-tight uppercase">Nano</h1>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kardex System</p>
+                    <span className="font-black text-white text-lg tracking-tight uppercase">NANO</span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest hidden sm:block">USUÁRIO NANO</span>
+                    <span className="text-sm text-white font-bold">{currentUser.name}</span>
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-black text-sm">
+                        {currentUser.name.charAt(0)}
                     </div>
+                    <button onClick={() => setCurrentUser(null)} className="p-2 text-white/70 hover:text-white transition-colors hidden lg:block">
+                        <LogOut size={18} />
+                    </button>
+                </div>
+            </header>
+
+            {/* SIDEBAR - Branca */}
+            <aside className="hidden lg:flex flex-col w-56 bg-white border-r border-slate-200 fixed top-14 h-[calc(100vh-56px)] z-30">
+                <div className="p-4 border-b border-slate-100">
+                    <p className="text-[9px] font-bold text-primary-600 uppercase tracking-widest">Plataforma</p>
+                    <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">NANO PRO</h2>
                 </div>
 
-                <nav className="flex-1 space-y-2">
-                    <button onClick={() => setView('DASHBOARD')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${view === 'DASHBOARD' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                <nav className="flex-1 p-3 space-y-1">
+                    <button onClick={() => setView('DASHBOARD')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'DASHBOARD' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
                         <LayoutDashboard size={18} /> Dashboard
                     </button>
-                    <button onClick={() => setView('STOCK')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${view === 'STOCK' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                    <button onClick={() => setView('STOCK')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'STOCK' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
                         <BarChart3 size={18} /> Saldo em Estoque
                     </button>
-                    <button onClick={() => setView('HISTORY')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${view === 'HISTORY' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                    <button onClick={() => setView('HISTORY')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'HISTORY' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
                         <History size={18} /> Histórico
                     </button>
-                    <button onClick={() => { setEditingTransaction(null); setPrefillData(undefined); setView('NEW'); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${view === 'NEW' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                    <button onClick={() => { setEditingTransaction(null); setPrefillData(undefined); setView('NEW'); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'NEW' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
                         <PlusCircle size={18} /> Novo Lançamento
                     </button>
-                    <button onClick={() => setView('INVENTORY')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${view === 'INVENTORY' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-                        <ClipboardList size={18} /> Inventários Físicos
+                    <button onClick={() => setView('INVENTORY')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'INVENTORY' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
+                        <ClipboardList size={18} /> Inventários
                     </button>
                     {currentUser?.profile === 'ADMIN' && (
-                        <button onClick={() => setView('SETTINGS')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${view === 'SETTINGS' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-                            <SettingsIcon size={18} /> Configurações
+                        <button onClick={() => setView('SETTINGS')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'SETTINGS' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
+                            <SettingsIcon size={18} /> Configuração
                         </button>
                     )}
                 </nav>
-
-                <div className="pt-6 border-t border-slate-800">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center font-black text-sm">
-                            {currentUser.name.charAt(0)}
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold">{currentUser.name}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase">{currentUser.profile}</p>
-                        </div>
-                    </div>
-                    <button onClick={() => setCurrentUser(null)} className="w-full flex items-center justify-center gap-2 px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl text-xs font-bold transition-all">
-                        <LogOut size={14} /> Sair
-                    </button>
-                </div>
             </aside>
 
             {/* Mobile Header */}
-            <header className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between z-40 shadow-sm">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                        <Package size={16} className="text-white" />
-                    </div>
-                    <span className="font-black text-slate-900 uppercase tracking-tight">Nano</span>
-                </div>
+            <div className="lg:hidden fixed top-14 left-0 right-0 bg-white border-b border-slate-200 p-2 z-40 flex items-center justify-between">
                 <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-slate-600">
                     {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
-            </header>
+                <span className="text-xs font-black text-slate-600 uppercase">{view === 'DASHBOARD' ? 'Dashboard' : view === 'STOCK' ? 'Estoque' : view === 'HISTORY' ? 'Histórico' : view === 'NEW' ? 'Lançamento' : view === 'INVENTORY' ? 'Inventários' : 'Config'}</span>
+                <div className="w-10"></div>
+            </div>
 
             {/* Mobile Menu */}
             {mobileMenuOpen && (
-                <div className="lg:hidden fixed inset-0 bg-slate-900/90 z-50 p-6 animate-fade-in">
+                <div className="lg:hidden fixed inset-0 bg-primary-600/95 z-50 p-6 animate-fade-in pt-20">
                     <div className="flex justify-end mb-6">
                         <button onClick={() => setMobileMenuOpen(false)} className="text-white"><X size={28} /></button>
                     </div>
                     <nav className="space-y-3">
-                        <button onClick={() => { setView('DASHBOARD'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-slate-800 text-left">
+                        <button onClick={() => { setView('DASHBOARD'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-white/10 text-left">
                             <LayoutDashboard size={20} /> Dashboard
                         </button>
-                        <button onClick={() => { setView('STOCK'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-slate-800 text-left">
+                        <button onClick={() => { setView('STOCK'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-white/10 text-left">
                             <BarChart3 size={20} /> Saldo em Estoque
                         </button>
-                        <button onClick={() => { setView('HISTORY'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-slate-800 text-left">
+                        <button onClick={() => { setView('HISTORY'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-white/10 text-left">
                             <History size={20} /> Histórico
                         </button>
-                        <button onClick={() => { setEditingTransaction(null); setPrefillData(undefined); setView('NEW'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-slate-800 text-left">
+                        <button onClick={() => { setEditingTransaction(null); setPrefillData(undefined); setView('NEW'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-white/10 text-left">
                             <PlusCircle size={20} /> Novo Lançamento
                         </button>
-                        <button onClick={() => { setView('INVENTORY'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-slate-800 text-left">
-                            <ClipboardList size={20} /> Inventários Físicos
+                        <button onClick={() => { setView('INVENTORY'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-white/10 text-left">
+                            <ClipboardList size={20} /> Inventários
                         </button>
                         {currentUser?.profile === 'ADMIN' && (
-                            <button onClick={() => { setView('SETTINGS'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-slate-800 text-left">
-                                <SettingsIcon size={20} /> Configurações
+                            <button onClick={() => { setView('SETTINGS'); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-white bg-white/10 text-left">
+                                <SettingsIcon size={20} /> Configuração
                             </button>
                         )}
-                        <button onClick={() => setCurrentUser(null)} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-red-400 bg-slate-800 text-left mt-8">
+                        <button onClick={() => setCurrentUser(null)} className="w-full flex items-center gap-3 px-4 py-4 rounded-xl font-bold text-red-300 bg-white/10 text-left mt-8">
                             <LogOut size={20} /> Sair
                         </button>
                     </nav>
@@ -341,7 +337,7 @@ const App: React.FC = () => {
             )}
 
             {/* Main Content */}
-            <main className="flex-1 lg:ml-72 pt-20 lg:pt-0 p-4 lg:p-8 min-h-screen">
+            <main className="flex-1 lg:ml-56 mt-14 lg:mt-14 pt-12 lg:pt-0 p-4 lg:p-8 bg-slate-50 min-h-[calc(100vh-56px)]">
                 {view === 'DASHBOARD' && (
                     <div className="space-y-6">
                         <StatsCards stats={stats} timeFilter={timeFilter} setTimeFilter={setTimeFilter} />

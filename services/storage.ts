@@ -229,7 +229,7 @@ export const deleteInventorySession = async (id: string): Promise<void> => {
 export const loadUsers = async (): Promise<User[]> => {
   if (!isSupabaseConfigured()) {
     // Return default admin if Supabase not configured
-    return [{ id: 'admin-01', name: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }];
+    return [{ id: 'admin-01', name: 'Administrador', login: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }];
   }
 
   try {
@@ -239,12 +239,12 @@ export const loadUsers = async (): Promise<User[]> => {
 
     if (error) {
       console.error('Load users error:', error);
-      return [{ id: 'admin-01', name: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }];
+      return [{ id: 'admin-01', name: 'Administrador', login: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }];
     }
 
     if (!data || data.length === 0) {
       // Create default admin if no users exist
-      const defaultAdmin: User = { id: 'admin-01', name: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() };
+      const defaultAdmin: User = { id: 'admin-01', name: 'Administrador', login: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() };
       await saveUsers([defaultAdmin]);
       return [defaultAdmin];
     }
@@ -252,6 +252,7 @@ export const loadUsers = async (): Promise<User[]> => {
     return data.map(u => ({
       id: u.id,
       name: u.name,
+      login: u.login || u.name, // fallback for old data
       password: u.password,
       profile: u.profile,
       active: u.active,
@@ -259,7 +260,7 @@ export const loadUsers = async (): Promise<User[]> => {
     }));
   } catch (err) {
     console.error('Load users failed:', err);
-    return [{ id: 'admin-01', name: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }];
+    return [{ id: 'admin-01', name: 'Administrador', login: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }];
   }
 };
 
@@ -270,6 +271,7 @@ export const saveUsers = async (users: User[]): Promise<void> => {
     const formatted = users.map(u => ({
       id: u.id,
       name: u.name,
+      login: u.login,
       password: u.password,
       profile: u.profile,
       active: u.active,
