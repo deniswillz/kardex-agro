@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { 
-  Users, ShieldAlert, Database, Download, Upload, Trash2, 
-  UserPlus, Shield, ToggleLeft, ToggleRight, 
+import {
+  Users, ShieldAlert, Database, Download, Upload, Trash2,
+  UserPlus, Shield, ToggleLeft, ToggleRight,
   AlertTriangle, RefreshCcw, FileSpreadsheet, FileJson, Lock
 } from 'lucide-react';
 import { User, UserProfile, Transaction } from '../types';
@@ -16,9 +16,9 @@ interface SettingsProps {
   onBackup: () => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ 
-  users, onSaveUsers, onWipeData, onRestoreData, 
-  onImportExcel, onExportKardex, onBackup 
+export const Settings: React.FC<SettingsProps> = ({
+  users, onSaveUsers, onWipeData, onRestoreData,
+  onImportExcel, onExportKardex, onBackup
 }) => {
   const [activeTab, setActiveTab] = useState<'USERS' | 'MAINTENANCE' | 'DATA'>('USERS');
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -33,7 +33,7 @@ export const Settings: React.FC<SettingsProps> = ({
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-    
+
     const newUser: User = {
       id: editingUser?.id || crypto.randomUUID(),
       name: formData.get('name') as string,
@@ -65,19 +65,19 @@ export const Settings: React.FC<SettingsProps> = ({
       {/* Sidebar Tabs */}
       <div className="w-full lg:w-64 bg-slate-50 border-r border-slate-200 p-4 space-y-2">
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 mb-4">Administração</h3>
-        <button 
+        <button
           onClick={() => setActiveTab('USERS')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'USERS' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'text-slate-500 hover:bg-slate-100'}`}
         >
           <Users size={18} /> Gestão de Usuários
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('DATA')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'DATA' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'text-slate-500 hover:bg-slate-100'}`}
         >
           <Database size={18} /> Central de Dados
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('MAINTENANCE')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'MAINTENANCE' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:bg-slate-100'}`}
         >
@@ -94,7 +94,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight">Usuários do Sistema</h2>
                 <p className="text-xs text-slate-400 font-medium">Controle de acesso e permissões de colaboradores</p>
               </div>
-              <button 
+              <button
                 onClick={() => setEditingUser({ id: '', name: '', password: '', profile: 'OPERADOR', active: true })}
                 className="bg-primary-600 text-white px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-primary-700 transition-all shadow-md shadow-primary-500/20"
               >
@@ -140,8 +140,8 @@ export const Settings: React.FC<SettingsProps> = ({
         {activeTab === 'DATA' && (
           <div className="space-y-8 animate-slide-up">
             <div>
-              <h2 className="text-2xl font-black text-slate-800 tracking-tight">Central de Integração (ETL)</h2>
-              <p className="text-xs text-slate-400 font-medium italic">Ferramentas de importação, exportação e relatórios fiscais</p>
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight">Central de Dados</h2>
+              <p className="text-xs text-slate-400 font-medium italic">Ferramentas de importação, exportação, backup e relatórios</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -172,17 +172,39 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
             </div>
 
-            <div className="p-6 border border-dashed border-slate-200 rounded-2xl bg-white flex items-center justify-between">
-               <div className="flex items-center gap-4">
-                 <div className="p-3 bg-slate-100 rounded-xl text-slate-500"><FileJson size={24} /></div>
-                 <div>
-                   <h4 className="text-sm font-bold text-slate-800">Backup de Segurança (JSON)</h4>
-                   <p className="text-[10px] text-slate-400 uppercase font-black">Snapshot completo do banco de dados local</p>
-                 </div>
-               </div>
-               <button onClick={onBackup} className="flex items-center gap-2 text-primary-600 font-black text-[10px] uppercase bg-primary-50 px-4 py-2 rounded-lg hover:bg-primary-100 transition-all">
-                 <Download size={14} /> Gerar Backup
-               </button>
+            {/* Backup Manual e Restaurar */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-6 border border-dashed border-slate-200 rounded-2xl bg-white flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary-50 rounded-xl text-primary-600"><FileJson size={24} /></div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">Backup Manual</h4>
+                    <p className="text-[10px] text-slate-400 uppercase font-black">Snapshot completo do sistema</p>
+                  </div>
+                </div>
+                <button onClick={onBackup} className="flex items-center gap-2 text-white font-black text-[10px] uppercase bg-primary-600 px-4 py-2 rounded-lg hover:bg-primary-700 transition-all shadow-md">
+                  <Download size={14} /> Gerar
+                </button>
+              </div>
+
+              <div className="p-6 border border-dashed border-slate-200 rounded-2xl bg-white flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-amber-50 rounded-xl text-amber-600"><Upload size={24} /></div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">Restaurar Backup</h4>
+                    <p className="text-[10px] text-slate-400 uppercase font-black">Carregar arquivo JSON</p>
+                  </div>
+                </div>
+                <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 text-white font-black text-[10px] uppercase bg-amber-600 px-4 py-2 rounded-lg hover:bg-amber-700 transition-all shadow-md">
+                  <Upload size={14} /> Restaurar
+                </button>
+              </div>
+            </div>
+
+            {/* Auto-backup info */}
+            <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              <p className="text-xs font-bold text-emerald-700">Backup automático ativo: Diariamente às 17:45 (retenção de 7 dias)</p>
             </div>
           </div>
         )}
@@ -198,20 +220,6 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              <div className="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between group hover:border-primary-500 transition-all">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary-50 text-primary-600 rounded-xl group-hover:bg-primary-600 group-hover:text-white transition-all"><RefreshCcw size={24} /></div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800">Restaurar Banco de Dados</h4>
-                    <p className="text-xs text-slate-400">Upload de arquivo JSON para sobrescrever o estado atual</p>
-                  </div>
-                </div>
-                <button onClick={() => fileInputRef.current?.click()} className="px-6 py-2 bg-slate-100 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-800 hover:text-white transition-all">
-                  Restaurar
-                </button>
-                <input type="file" ref={fileInputRef} onChange={handleFileRestore} accept=".json" className="hidden" />
-              </div>
-
               <div className="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between group hover:border-red-500 transition-all">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-red-50 text-red-500 rounded-xl group-hover:bg-red-500 group-hover:text-white transition-all"><Trash2 size={24} /></div>
@@ -220,7 +228,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     <p className="text-xs text-slate-400">Apaga todas as movimentações e saldos (Reseta o sistema)</p>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     if (confirm('Atenção CRÍTICA: Deseja apagar TODOS os registros do sistema? Esta ação NÃO pode ser desfeita.')) {
                       if (confirm('CONFIRMAÇÃO FINAL: Todos os dados de movimentação serão perdidos. Prosseguir?')) onWipeData();
@@ -232,6 +240,9 @@ export const Settings: React.FC<SettingsProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Hidden file input for restore - used by Central de Dados */}
+            <input type="file" ref={fileInputRef} onChange={handleFileRestore} accept=".json" className="hidden" />
           </div>
         )}
       </div>
@@ -239,37 +250,37 @@ export const Settings: React.FC<SettingsProps> = ({
       {/* User Edit Modal */}
       {editingUser && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-           <form onSubmit={handleSaveUser} className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
-              <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-                <div className="p-2 bg-primary-50 text-primary-600 rounded-lg"><Users size={20} /></div>
-                <h3 className="font-black text-slate-800 uppercase tracking-tight">{editingUser.id ? 'Editar Usuário' : 'Novo Usuário'}</h3>
+          <form onSubmit={handleSaveUser} className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
+            <div className="p-6 border-b border-slate-100 flex items-center gap-3">
+              <div className="p-2 bg-primary-50 text-primary-600 rounded-lg"><Users size={20} /></div>
+              <h3 className="font-black text-slate-800 uppercase tracking-tight">{editingUser.id ? 'Editar Usuário' : 'Novo Usuário'}</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nome Completo (Login)</label>
+                <input name="name" defaultValue={editingUser.name} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-primary-500" />
               </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nome Completo (Login)</label>
-                  <input name="name" defaultValue={editingUser.name} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-primary-500" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Senha de Acesso</label>
-                  <div className="relative">
-                    <input name="password" type="password" defaultValue={editingUser.password} placeholder="••••••••" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold outline-none focus:border-primary-500" />
-                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Perfil de Acesso</label>
-                  <select name="profile" defaultValue={editingUser.profile} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-black outline-none focus:border-primary-500">
-                    <option value="ADMIN">ADMIN (Controle Total)</option>
-                    <option value="OPERADOR">OPERADOR (Entradas/Saídas)</option>
-                    <option value="AUDITOR">AUDITOR (Apenas Consulta)</option>
-                  </select>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Senha de Acesso</label>
+                <div className="relative">
+                  <input name="password" type="password" defaultValue={editingUser.password} placeholder="••••••••" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold outline-none focus:border-primary-500" />
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 </div>
               </div>
-              <div className="p-6 bg-slate-50 flex gap-3">
-                <button type="button" onClick={() => setEditingUser(null)} className="flex-1 py-3 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 rounded-xl transition-all">Cancelar</button>
-                <button type="submit" className="flex-[2] py-3 bg-primary-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary-500/20">Salvar Alterações</button>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Perfil de Acesso</label>
+                <select name="profile" defaultValue={editingUser.profile} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-black outline-none focus:border-primary-500">
+                  <option value="ADMIN">ADMIN (Controle Total)</option>
+                  <option value="OPERADOR">OPERADOR (Entradas/Saídas)</option>
+                  <option value="AUDITOR">AUDITOR (Apenas Consulta)</option>
+                </select>
               </div>
-           </form>
+            </div>
+            <div className="p-6 bg-slate-50 flex gap-3">
+              <button type="button" onClick={() => setEditingUser(null)} className="flex-1 py-3 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 rounded-xl transition-all">Cancelar</button>
+              <button type="submit" className="flex-[2] py-3 bg-primary-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary-500/20">Salvar Alterações</button>
+            </div>
+          </form>
         </div>
       )}
     </div>

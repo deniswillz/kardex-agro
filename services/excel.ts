@@ -16,14 +16,14 @@ const checkXLSX = (): boolean => {
 export const downloadTemplate = () => {
   if (!checkXLSX()) return;
   const headers = [
-    ["AGROSYSTEM - MODELO DE IMPORTAÇÃO"], // Linha 1: Título/Meta
+    ["NANO - MODELO DE IMPORTAÇÃO"], // Linha 1: Título/Meta
     ["Armazém", "", "", "Código", "Descrição", "", "", "", "Endereço", "", "", "", "", "UN", "Saldo Atual"], // Linha 2: Cabeçalho
     ["01", "", "", "PROD100", "ITEM EXEMPLO", "", "", "", "PRAT-01-A", "", "", "", "", "UN", "50"] // Linha 3: Dados
   ];
   const worksheet = XLSX.utils.aoa_to_sheet(headers);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Modelo_Importacao");
-  XLSX.writeFile(workbook, "Modelo_Kardex_Agrosystem.xlsx");
+  XLSX.writeFile(workbook, "Modelo_Kardex_Nano.xlsx");
 };
 
 export const exportToExcel = (transactions: Transaction[]) => {

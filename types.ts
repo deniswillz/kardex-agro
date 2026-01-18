@@ -21,10 +21,11 @@ export interface Transaction {
   operationType: OperationType;
   quantity: number;
   unit: string; // UN, KG, CX, etc.
-  minStock: number; 
+  minStock: number;
   warehouse: string; // Used as Origin in the UI
   destinationWarehouse?: string;
-  address?: string; 
+  destAddress?: string; // Endereço de destino para transferências
+  address?: string;
   responsible?: string;
   photos: string[];
   timestamp: number;

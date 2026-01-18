@@ -146,7 +146,8 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
                         </>
                       )}
                     </div>
-                    {t.address && <span className="text-[9px] text-slate-400 italic font-medium">Endereço: {t.address}</span>}
+                    {t.address && <span className="text-[9px] text-slate-400 italic font-medium">End. Origem: {t.address}</span>}
+                    {t.destAddress && <span className="text-[9px] text-primary-500 italic font-medium">End. Destino: {t.destAddress}</span>}
                   </div>
                 </td>
                 <td className="px-6 py-4">
@@ -205,7 +206,8 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
                       </>
                     )}
                   </div>
-                  {t.address && <p className="text-[9px] text-slate-400 mt-1">End: {t.address}</p>}
+                  {t.address && <p className="text-[9px] text-slate-400 mt-1">End. Origem: {t.address}</p>}
+                  {t.destAddress && <p className="text-[9px] text-primary-500 mt-1">End. Destino: {t.destAddress}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-2">
                   <div>

@@ -120,10 +120,16 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
       return;
     }
 
-    // For SAIDA, always require destination
-    if (type === 'SAIDA' && opType === 'MOVIMENTACAO' && originWarehouse === destWarehouse && destWarehouse) {
-      alert("A Origem e o Destino não podem ser o mesmo armazém.");
-      return;
+    // For SAIDA, require destination warehouse
+    if (type === 'SAIDA' && opType === 'MOVIMENTACAO') {
+      if (!destWarehouse) {
+        alert("Por favor, selecione o Armazém de Destino.");
+        return;
+      }
+      if (originWarehouse === destWarehouse) {
+        alert("A Origem e o Destino não podem ser o mesmo armazém.");
+        return;
+      }
     }
 
     const formData = {
@@ -137,8 +143,9 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
       minStock: Number(minStock || 0),
       warehouse: originWarehouse,
       destinationWarehouse: (type === 'SAIDA' && opType === 'MOVIMENTACAO' && destWarehouse) ? destWarehouse : undefined,
+      destAddress: (type === 'SAIDA' && opType === 'MOVIMENTACAO' && destAddress) ? destAddress : undefined,
       address,
-      responsible: 'Admin Agrosystem',
+      responsible: 'Admin Nano',
       photos
     };
 
@@ -319,13 +326,14 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
             {/* DESTINATION */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Armazém Destino</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Armazém Destino *</label>
                 <select
                   value={destWarehouse}
                   onChange={(e) => setDestWarehouse(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl p-3.5 text-sm font-black outline-none focus:border-primary-500"
+                  required
                 >
-                  <option value="">Apenas Baixa (sem destino)</option>
+                  <option value="">Selecione o destino...</option>
                   {WAREHOUSES.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </select>
               </div>
@@ -348,7 +356,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Responsável</label>
             <div className="relative">
-              <input type="text" value="Admin Agrosystem" readOnly className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3.5 text-sm font-bold text-slate-500 outline-none cursor-not-allowed pl-10" />
+              <input type="text" value="Admin Nano" readOnly className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3.5 text-sm font-bold text-slate-500 outline-none cursor-not-allowed pl-10" />
               <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
           </div>
@@ -363,7 +371,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           <button
             type="submit"
             className={`w-full py-4 rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3 ${opType === 'CONTAGEM' ? 'bg-amber-600 hover:bg-amber-700' :
-                type === 'ENTRADA' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
+              type === 'ENTRADA' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
               }`}
           >
             <Save size={20} />
