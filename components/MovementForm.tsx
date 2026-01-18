@@ -34,20 +34,20 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-detect warehouse when SKU is entered (for ENTRADA)
+  // Auto-detect warehouse and item info when SKU is entered (for ENTRADA and SAIDA)
   useEffect(() => {
-    if (code && type === 'ENTRADA') {
+    if (code && (type === 'ENTRADA' || type === 'SAIDA')) {
       // Find the most recent transaction for this SKU in main warehouses
       const match = [...transactions]
-        .filter(t => t.code === code && MAIN_WAREHOUSES.includes(t.warehouse))
+        .filter(t => t.code.toUpperCase() === code.toUpperCase() && MAIN_WAREHOUSES.includes(t.warehouse))
         .sort((a, b) => b.timestamp - a.timestamp)[0];
 
       if (match) {
         setName(match.name);
         setUnit(match.unit || 'UN');
         setMinStock(match.minStock || 0);
-        // Auto-set origin warehouse to last used
-        if (!prefill?.warehouse) {
+        // Auto-set origin warehouse to last used (only if not prefilled)
+        if (!prefill?.warehouse && type === 'ENTRADA') {
           setOriginWarehouse(match.warehouse);
         }
         if (!address && !prefill?.address) setAddress(match.address || '');
@@ -127,8 +127,9 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
         alert("Por favor, selecione o Armazém de Destino.");
         return;
       }
-      if (originWarehouse === destWarehouse) {
-        alert("A Origem e o Destino não podem ser o mesmo armazém.");
+      // Permite mesmo armazém se os endereços forem diferentes
+      if (originWarehouse === destWarehouse && address === destAddress) {
+        alert("A Origem e o Destino não podem ser o mesmo armazém/endereço. Altere o endereço de destino.");
         return;
       }
     }

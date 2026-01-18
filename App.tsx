@@ -75,15 +75,41 @@ const App: React.FC = () => {
     };
 
     // Transaction handlers
+    const MAIN_WAREHOUSES = ['01', '20', '22'];
+
     const handleAddTransaction = async (data: Omit<Transaction, 'id' | 'timestamp'>) => {
         const newTx: Transaction = {
             ...data,
             id: crypto.randomUUID(),
             timestamp: Date.now()
         };
-        const updated = [...transactions, newTx];
-        setTransactions(updated);
+
+        let updated = [...transactions, newTx];
         await saveTransaction(newTx);
+
+        // Se for SAIDA com destino para armazém principal (01, 20, 22), criar ENTRADA automática
+        if (data.type === 'SAIDA' && data.destinationWarehouse && MAIN_WAREHOUSES.includes(data.destinationWarehouse)) {
+            const entryTx: Transaction = {
+                id: crypto.randomUUID(),
+                timestamp: Date.now(),
+                date: data.date,
+                code: data.code,
+                name: data.name,
+                type: 'ENTRADA',
+                operationType: 'MOVIMENTACAO',
+                quantity: data.quantity,
+                unit: data.unit,
+                minStock: data.minStock || 0,
+                warehouse: data.destinationWarehouse, // Armazém de entrada é o destino
+                address: data.destAddress || 'UNICO',
+                responsible: data.responsible,
+                photos: []
+            };
+            updated = [...updated, entryTx];
+            await saveTransaction(entryTx);
+        }
+
+        setTransactions(updated);
         setView('HISTORY');
         setPrefillData(undefined);
     };

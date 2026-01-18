@@ -88,7 +88,8 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
     }).sort((a, b) => a.warehouse.localeCompare(b.warehouse) || a.code.localeCompare(b.code));
   }, [transactions]);
 
-  const filteredData = stockItems.filter(item => {
+  // Use stockData calculado internamente (com lastEntry/lastExit) ao invés de stockItems props
+  const filteredData = stockData.filter(item => {
     const matchesSearch = item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesWarehouse = warehouseFilter === 'ALL' || item.warehouse === warehouseFilter;
@@ -170,14 +171,14 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
                     </div>
                     <div>
                       <div className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{item.name}</div>
-                      <div className="text-xs font-mono text-slate-400 uppercase tracking-tighter">{item.code}</div>
+                      <div className="text-sm font-mono text-slate-500 uppercase tracking-tight">{item.code}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-4 text-center">
                   <div className="flex flex-col items-center">
-                    <span className="bg-slate-800 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">ARM: {item.warehouse}</span>
-                    <span className="text-[9px] text-slate-400 font-bold mt-1 uppercase italic">{item.address || 'Geral'}</span>
+                    <span className="bg-slate-800 text-white text-xs font-black px-2 py-0.5 rounded-full uppercase">ARM: {item.warehouse}</span>
+                    <span className="text-xs text-slate-500 font-bold mt-1 uppercase italic">{item.address || 'Geral'}</span>
                   </div>
                 </td>
                 <td className="px-4 py-4 text-center">
@@ -185,19 +186,19 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex flex-col gap-1 items-center">
-                    <div className="flex items-center gap-2 text-[9px] font-bold text-emerald-600">
-                      <ArrowUpCircle size={10} /> {formatDate(item.lastEntry)}
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-600">
+                      <ArrowUpCircle size={12} /> {formatDate(item.lastEntry)}
                     </div>
-                    <div className="flex items-center gap-2 text-[9px] font-bold text-red-500">
-                      <ArrowDownCircle size={10} /> {formatDate(item.lastExit)}
+                    <div className="flex items-center gap-2 text-xs font-bold text-red-500">
+                      <ArrowDownCircle size={12} /> {formatDate(item.lastExit)}
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-4 text-center">
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-[10px] font-black text-slate-600">{formatDate(item.lastCount)}</span>
+                    <span className="text-xs font-black text-slate-600">{formatDate(item.lastCount)}</span>
                     {item.lastCountQuantity !== undefined && (
-                      <span className="text-[8px] font-bold text-slate-400 uppercase">Visto: {item.lastCountQuantity}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Visto: {item.lastCountQuantity}</span>
                     )}
                   </div>
                 </td>
