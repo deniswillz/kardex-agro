@@ -1,7 +1,8 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, QrCode, X, Save, ArrowLeft, User, Calendar, MapPin, Hash, Package, AlertCircle, ArrowRightLeft, Send, LogOut, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Transaction, MovementType, OperationType, WAREHOUSES, User as UserType } from '../types';
+import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 
 interface MovementFormProps {
   onAdd: (transaction: Omit<Transaction, 'id' | 'timestamp'>) => void;
@@ -39,10 +40,71 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
   const [photos, setPhotos] = useState<string[]>([]);
   const [currentStock, setCurrentStock] = useState<number | null>(null);
   const [alertModal, setAlertModal] = useState<AlertModal>({ show: false, type: 'error', title: '', message: '' });
+  const [showQrScanner, setShowQrScanner] = useState(false);
+  const qrScannerRef = useRef<Html5Qrcode | null>(null);
 
   const showAlert = (type: 'error' | 'warning' | 'success', title: string, message: string) => {
     setAlertModal({ show: true, type, title, message });
   };
+
+  // QR Code Scanner Functions
+  const startQrScanner = useCallback(async () => {
+    setShowQrScanner(true);
+
+    // Aguarda o DOM atualizar
+    setTimeout(async () => {
+      try {
+        const html5QrCode = new Html5Qrcode("qr-reader");
+        qrScannerRef.current = html5QrCode;
+
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+          },
+          (decodedText) => {
+            // Sucesso - código lido
+            setCode(decodedText.toUpperCase());
+            stopQrScanner();
+            showAlert('success', 'QR Code Lido!', `Código: ${decodedText}`);
+          },
+          () => {
+            // Erro de leitura (ignorado, continua tentando)
+          }
+        );
+      } catch (err) {
+        console.error('Erro ao iniciar scanner:', err);
+        showAlert('error', 'Erro na Câmera', 'Não foi possível acessar a câmera. Verifique as permissões.');
+        setShowQrScanner(false);
+      }
+    }, 100);
+  }, []);
+
+  const stopQrScanner = useCallback(async () => {
+    if (qrScannerRef.current) {
+      try {
+        const state = qrScannerRef.current.getState();
+        if (state === Html5QrcodeScannerState.SCANNING) {
+          await qrScannerRef.current.stop();
+        }
+        qrScannerRef.current.clear();
+      } catch (err) {
+        console.error('Erro ao parar scanner:', err);
+      }
+      qrScannerRef.current = null;
+    }
+    setShowQrScanner(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (qrScannerRef.current) {
+        qrScannerRef.current.stop().catch(() => { });
+      }
+    };
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -232,7 +294,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-black outline-none focus:border-primary-500 focus:bg-white transition-all pr-12"
                 required
               />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-600 hover:text-primary-800 p-1 bg-primary-50 rounded-lg transition-colors">
+              <button type="button" onClick={startQrScanner} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-600 hover:text-primary-800 p-1 bg-primary-50 rounded-lg transition-colors">
                 <QrCode size={20} />
               </button>
             </div>
@@ -428,6 +490,37 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
                 className={`w-full py-3 rounded-xl font-black text-sm uppercase tracking-widest text-white transition-all active:scale-[0.98] ${alertModal.type === 'error' ? 'bg-red-600 hover:bg-red-700' : alertModal.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
               >
                 Entendi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Scanner QR Code */}
+      {showQrScanner && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="p-4 bg-primary-600 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <QrCode size={24} className="text-white" />
+                <h3 className="text-white font-black uppercase tracking-tight">Scanner QR Code</h3>
+              </div>
+              <button onClick={stopQrScanner} className="p-2 bg-white/20 rounded-lg text-white hover:bg-white/30 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4">
+              <div id="qr-reader" className="w-full rounded-xl overflow-hidden"></div>
+              <p className="text-center text-sm text-slate-500 mt-4">
+                Aponte a câmera para o QR Code do produto
+              </p>
+            </div>
+            <div className="p-4 border-t border-slate-100">
+              <button
+                onClick={stopQrScanner}
+                className="w-full py-3 bg-slate-200 hover:bg-slate-300 rounded-xl font-black text-sm uppercase tracking-widest text-slate-700 transition-all"
+              >
+                Cancelar
               </button>
             </div>
           </div>
