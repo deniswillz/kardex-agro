@@ -136,9 +136,11 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Sessão / Auditoria</th>
-              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsável</th>
-              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Abertura</th>
-              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+              <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Criador</th>
+              <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Conferente</th>
+              <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Abertura</th>
+              <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Fechamento</th>
+              <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
               <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Ações</th>
             </tr>
           </thead>
@@ -156,21 +158,43 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-4 py-4">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase">
                     <UserIcon size={14} className="text-primary-400" />
                     {session.responsible}
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-                      <Calendar size={14} className="text-slate-300" />
-                      {new Date(session.createdAt).toLocaleDateString('pt-BR')}
-                    </div>
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase">
+                    {session.conferente ? (
+                      <>
+                        <UserIcon size={14} className="text-emerald-400" />
+                        {session.conferente}
+                      </>
+                    ) : (
+                      <span className="text-slate-300 italic">Pendente</span>
+                    )}
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                    <Calendar size={14} className="text-slate-300" />
+                    {new Date(session.createdAt).toLocaleDateString('pt-BR')}
+                  </div>
+                </td>
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                    {session.closedAt ? (
+                      <>
+                        <Calendar size={14} className="text-emerald-400" />
+                        {new Date(session.closedAt).toLocaleDateString('pt-BR')}
+                      </>
+                    ) : (
+                      <span className="text-slate-300 italic">--</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-4">
                   <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${session.status === 'ABERTO' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-800 text-white border-slate-900'
                     }`}>
                     {session.status === 'ABERTO' ? 'Em Aberto' : 'Finalizado'}

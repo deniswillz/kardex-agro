@@ -67,9 +67,10 @@ export interface InventorySessionItem {
 export interface InventorySession {
   id: string;
   name: string;
-  responsible: string;
+  responsible: string; // Criador - who created the inventory
+  conferente?: string; // Conferente - who checked the inventory
   createdAt: number;
-  closedAt?: number;
+  closedAt?: number; // Data Fechamento
   status: 'ABERTO' | 'FINALIZADO';
   items: InventorySessionItem[];
 }
