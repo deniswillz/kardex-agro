@@ -121,7 +121,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
       return;
     }
 
-    // For SAIDA, require destination warehouse
+    // For SAIDA, require destination warehouse and check stock
     if (type === 'SAIDA' && opType === 'MOVIMENTACAO') {
       if (!destWarehouse) {
         alert("Por favor, selecione o Armazém de Destino.");
@@ -130,6 +130,15 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
       // Permite mesmo armazém se os endereços forem diferentes
       if (originWarehouse === destWarehouse && address === destAddress) {
         alert("A Origem e o Destino não podem ser o mesmo armazém/endereço. Altere o endereço de destino.");
+        return;
+      }
+      // Verifica se tem saldo suficiente na origem
+      if (currentStock !== null && Number(quantity) > currentStock) {
+        alert(`Saldo insuficiente! Disponível: ${currentStock}. Quantidade solicitada: ${quantity}`);
+        return;
+      }
+      if (currentStock === null || currentStock <= 0) {
+        alert("Não há saldo disponível nesta localização para realizar a saída.");
         return;
       }
     }

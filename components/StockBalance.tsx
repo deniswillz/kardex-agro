@@ -89,7 +89,9 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
   }, [transactions]);
 
   // Use stockData calculado internamente (com lastEntry/lastExit) ao invés de stockItems props
+  // Filtra itens com saldo zero
   const filteredData = stockData.filter(item => {
+    if (item.balance <= 0) return false; // Oculta itens com saldo zero ou negativo
     const matchesSearch = item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesWarehouse = warehouseFilter === 'ALL' || item.warehouse === warehouseFilter;
