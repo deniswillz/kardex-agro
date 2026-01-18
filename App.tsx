@@ -346,7 +346,7 @@ const App: React.FC = () => {
                                 <Dashboard transactions={transactions} />
                             </div>
                             <div>
-                                <CriticalAlerts items={criticalItems} onAction={handleQuickAction} />
+                                <CriticalAlerts items={criticalItems} onAction={handleQuickAction} onNavigateToStock={() => setView('STOCK')} />
                             </div>
                         </div>
                     </div>
