@@ -2,16 +2,18 @@
 import React, { useMemo, useState } from 'react';
 import { Transaction, InventoryItem, WAREHOUSES } from '../types';
 import { Search, Package, ArrowRight, AlertTriangle, MapPin, Edit3, Save, X, ArrowUpCircle, ArrowDownCircle, ClipboardList, MoveHorizontal, PackageSearch, Clock, Calendar } from 'lucide-react';
+import { saveTransaction } from '../services/storage';
 
 interface StockBalanceProps {
+  stockItems: InventoryItem[];
+  onQuickAction: (code: string, warehouse: string, address?: string) => void;
   transactions: Transaction[];
-  onMove: (code: string, warehouse: string, address?: string) => void;
-  onUpdateMinStock: (code: string, newMin: number) => void;
+  onUpdateTransactions: (transactions: Transaction[]) => void;
 }
 
 const MAIN_WAREHOUSES = ['01', '20', '22'];
 
-export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove, onUpdateMinStock }) => {
+export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickAction, transactions, onUpdateTransactions }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('ALL');
   const [editingCode, setEditingCode] = useState<string | null>(null);
@@ -86,7 +88,7 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
     }).sort((a, b) => a.warehouse.localeCompare(b.warehouse) || a.code.localeCompare(b.code));
   }, [transactions]);
 
-  const filteredData = stockData.filter(item => {
+  const filteredData = stockItems.filter(item => {
     const matchesSearch = item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesWarehouse = warehouseFilter === 'ALL' || item.warehouse === warehouseFilter;
@@ -98,9 +100,13 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
     setTempMin(currentMin);
   };
 
-  const handleSaveMin = () => {
+  const handleSaveMin = async () => {
     if (editingCode !== null) {
-      onUpdateMinStock(editingCode, tempMin);
+      // Update minStock in all transactions with this code
+      const updated = transactions.map(t =>
+        t.code === editingCode ? { ...t, minStock: tempMin } : t
+      );
+      onUpdateTransactions(updated);
       setEditingCode(null);
     }
   };
@@ -209,7 +215,7 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
                   </div>
                 </td>
                 <td className="px-4 py-4 text-center">
-                  <button onClick={() => onMove(item.code, item.warehouse, item.address)} className="p-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-500/10 active:scale-95">
+                  <button onClick={() => onQuickAction(item.code, item.warehouse, item.address)} className="p-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-500/10 active:scale-95">
                     <MoveHorizontal size={18} />
                   </button>
                 </td>
@@ -259,7 +265,7 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
                     </div>
                   </div>
                   <button
-                    onClick={() => onMove(item.code, item.warehouse, item.address)}
+                    onClick={() => onQuickAction(item.code, item.warehouse, item.address)}
                     className="bg-primary-600 text-white px-4 py-2 rounded-lg font-black text-[9px] uppercase tracking-widest shadow-md flex items-center gap-2"
                   >
                     <MoveHorizontal size={12} /> Movimentar

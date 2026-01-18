@@ -381,6 +381,7 @@ const App: React.FC = () => {
                         onCancel={() => { setEditingTransaction(null); setPrefillData(undefined); setView('DASHBOARD'); }}
                         initialData={editingTransaction}
                         prefill={prefillData}
+                        currentUser={currentUser || undefined}
                     />
                 )}
 

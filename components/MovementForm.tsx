@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, QrCode, X, Save, ArrowLeft, User, Calendar, MapPin, Hash, Package, AlertCircle, ArrowRightLeft, Send, LogOut } from 'lucide-react';
-import { Transaction, MovementType, OperationType, WAREHOUSES } from '../types';
+import { Transaction, MovementType, OperationType, WAREHOUSES, User as UserType } from '../types';
 
 interface MovementFormProps {
   onAdd: (transaction: Omit<Transaction, 'id' | 'timestamp'>) => void;
@@ -10,11 +10,12 @@ interface MovementFormProps {
   transactions: Transaction[];
   initialData?: Transaction | null;
   prefill?: { code: string; warehouse: string; address?: string };
+  currentUser?: UserType;
 }
 
 const MAIN_WAREHOUSES = ['01', '20', '22'];
 
-export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onCancel, transactions, initialData, prefill }) => {
+export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onCancel, transactions, initialData, prefill, currentUser }) => {
   const [type, setType] = useState<MovementType>('ENTRADA');
   const [opType, setOpType] = useState<OperationType>('MOVIMENTACAO');
 
@@ -145,7 +146,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
       destinationWarehouse: (type === 'SAIDA' && opType === 'MOVIMENTACAO' && destWarehouse) ? destWarehouse : undefined,
       destAddress: (type === 'SAIDA' && opType === 'MOVIMENTACAO' && destAddress) ? destAddress : undefined,
       address,
-      responsible: 'Admin Nano',
+      responsible: currentUser?.name || 'Operador',
       photos
     };
 
