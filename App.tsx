@@ -212,53 +212,59 @@ const App: React.FC = () => {
     // Login Screen
     if (!currentUser) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-                <div className="w-full max-w-md">
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4 shadow-lg shadow-primary-500/30">
-                            <Package size={32} className="text-white" />
-                        </div>
-                        <h1 className="text-3xl font-black text-white uppercase tracking-tight">Nano Kardex</h1>
-                        <p className="text-slate-400 text-sm font-medium mt-1">Sistema de Gestão de Estoque</p>
+            <div className="min-h-screen bg-primary-600 flex flex-col items-center justify-center p-4">
+                {/* Logo e Título */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl mb-6 shadow-lg">
+                        <span className="text-3xl font-black text-primary-600 italic">N</span>
                     </div>
-
-                    <form onSubmit={handleLogin} className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
-                        <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                                <User size={12} className="inline mr-1" /> Login
-                            </label>
-                            <input
-                                type="text"
-                                value={loginForm.name}
-                                onChange={(e) => setLoginForm({ ...loginForm, name: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-bold outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-                                placeholder="Seu login"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                                <Lock size={12} className="inline mr-1" /> Senha
-                            </label>
-                            <input
-                                type="password"
-                                value={loginForm.password}
-                                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-bold outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-                                placeholder="••••••••"
-                                required
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            className="w-full bg-primary-600 text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-primary-500/30 hover:bg-primary-700 transition-all active:scale-[0.98]"
-                        >
-                            Entrar
-                        </button>
-                    </form>
-
-
+                    <h1 className="text-4xl font-black text-white uppercase tracking-tight italic">NANO PRO</h1>
+                    <p className="text-white/70 text-xs font-medium uppercase tracking-[0.3em] mt-2">Logística Industrial Inteligente</p>
                 </div>
+
+                {/* Card de Login */}
+                <form onSubmit={handleLogin} className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 space-y-5">
+                    <div>
+                        <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                            <User size={12} /> Login
+                        </label>
+                        <input
+                            type="text"
+                            value={loginForm.name}
+                            onChange={(e) => setLoginForm({ ...loginForm, name: e.target.value })}
+                            className="w-full bg-slate-100 border-0 rounded-lg p-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary-500"
+                            placeholder="Seu login"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                            <Lock size={12} /> Senha
+                        </label>
+                        <input
+                            type="password"
+                            value={loginForm.password}
+                            onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                            className="w-full bg-slate-100 border-0 rounded-lg p-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary-500"
+                            placeholder="••••••••"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        className="w-full bg-primary-600 text-white py-4 rounded-lg font-black text-sm uppercase tracking-widest hover:bg-primary-700 transition-all active:scale-[0.98]"
+                    >
+                        Entrar
+                    </button>
+                    <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest pt-2">
+                        Modo Consulta (Visitante)
+                    </p>
+                </form>
+
+                {/* Footer */}
+                <p className="text-white/50 text-[10px] font-medium uppercase tracking-widest mt-12 text-center">
+                    NANO PRO © 2026 - Gestão Industrial de Alta Performance
+                </p>
             </div>
         );
     }
