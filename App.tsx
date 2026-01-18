@@ -6,7 +6,7 @@ import {
 import { Transaction, User as UserType } from './types';
 import {
     loadTransactions, saveTransaction, saveTransactions, deleteTransaction, loadUsers, saveUsers,
-    wipeTransactions, restoreBackup, exportToJson, scheduleAutoBackup
+    wipeTransactions, restoreBackup, exportToJson, scheduleAutoBackup, subscribeToTransactions
 } from './services/storage';
 import { importFromExcel, exportToExcel, downloadTemplate } from './services/excel';
 import { useStockCalculation } from './hooks/useStockCalculation';
@@ -74,6 +74,29 @@ const App: React.FC = () => {
         initializeApp();
     }, []);
 
+    // Função para recarregar dados do Supabase (sincronização)
+    const refreshData = async () => {
+        try {
+            const freshTransactions = await loadTransactions();
+            setTransactions(freshTransactions);
+        } catch (err) {
+            console.error('Erro ao sincronizar dados:', err);
+        }
+    };
+
+    // Supabase Realtime - Atualiza automaticamente quando outro usuário faz mudanças
+    useEffect(() => {
+        const unsubscribe = subscribeToTransactions(() => {
+            console.log('Recebendo atualização em tempo real...');
+            refreshData();
+        });
+
+        // Cleanup ao desmontar componente
+        return () => {
+            unsubscribe();
+        };
+    }, []);
+
     // Use custom hook for stock calculations
     const { stockItems, criticalItems, stats, timeFilter, setTimeFilter } = useStockCalculation(transactions);
 
@@ -129,7 +152,8 @@ const App: React.FC = () => {
             await saveTransaction(entryTx);
         }
 
-        setTransactions(updated);
+        // Sincronizar com banco após salvar
+        await refreshData();
         setView('HISTORY');
         setPrefillData(undefined);
     };
@@ -145,16 +169,17 @@ const App: React.FC = () => {
             updatedBy: currentUser?.name
         };
         const updated = transactions.map(t => t.id === id ? updatedTx : t);
-        setTransactions(updated);
         await saveTransaction(updatedTx);
+        // Sincronizar com banco após salvar
+        await refreshData();
         setEditingTransaction(null);
         setView('HISTORY');
     };
 
     const handleDeleteTransaction = async (id: string) => {
-        const updated = transactions.filter(t => t.id !== id);
-        setTransactions(updated);
         await deleteTransaction(id);
+        // Sincronizar com banco após deletar
+        await refreshData();
     };
 
     const handleEditTransaction = (tx: Transaction) => {

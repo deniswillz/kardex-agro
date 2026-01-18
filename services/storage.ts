@@ -435,3 +435,32 @@ export const exportToJson = async (): Promise<void> => {
   link.click();
   document.body.removeChild(link);
 };
+
+// ============ SUPABASE REALTIME ============
+
+export const subscribeToTransactions = (onUpdate: () => void): (() => void) => {
+  if (!isSupabaseConfigured()) {
+    console.warn('Supabase not configured - realtime disabled');
+    return () => { };
+  }
+
+  const channel = supabase
+    .channel('transactions-realtime')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'transactions' },
+      (payload) => {
+        console.log('Realtime update:', payload.eventType);
+        // Chama callback para recarregar dados
+        onUpdate();
+      }
+    )
+    .subscribe((status) => {
+      console.log('Realtime subscription status:', status);
+    });
+
+  // Retorna função de cleanup
+  return () => {
+    supabase.removeChannel(channel);
+  };
+};

@@ -35,7 +35,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
   const [originWarehouse, setOriginWarehouse] = useState('');
   const [destWarehouse, setDestWarehouse] = useState('');
   const [address, setAddress] = useState('');
-  const [destAddress, setDestAddress] = useState('');
+  const [destAddress, setDestAddress] = useState('UNICO');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [currentStock, setCurrentStock] = useState<number | null>(null);
@@ -441,7 +441,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Responsável</label>
             <div className="relative">
-              <input type="text" value="Admin Nano" readOnly className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3.5 text-sm font-bold text-slate-500 outline-none cursor-not-allowed pl-10" />
+              <input type="text" value={currentUser?.name || 'Usuário'} readOnly className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3.5 text-sm font-bold text-slate-500 outline-none cursor-not-allowed pl-10" />
               <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
           </div>
