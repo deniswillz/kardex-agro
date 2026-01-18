@@ -375,10 +375,11 @@ export const wipeTransactions = async (): Promise<void> => {
   if (!isSupabaseConfigured()) return;
 
   try {
+    // Delete all transactions using not.is instead of neq (works with UUID)
     const { error } = await supabase
       .from('transactions')
       .delete()
-      .neq('id', '');
+      .not('id', 'is', null);
 
     if (error) throw error;
   } catch (err) {
