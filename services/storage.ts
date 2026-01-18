@@ -1,43 +1,59 @@
-
 import { Transaction, User, InventorySession } from '../types';
 import { supabase, isSupabaseConfigured } from './supabase';
 
-const STORAGE_KEY = 'kardex_pro_v3_data';
-const USERS_KEY = 'kardex_pro_v3_users';
-const INVENTORY_SESSIONS_KEY = 'kardex_pro_v3_inventory_sessions';
-const LAST_BACKUP_KEY = 'kardex_last_auto_backup';
+// ============ TRANSACTIONS (Supabase Only) ============
 
-// ============ TRANSACTIONS ============
+export const loadTransactions = async (): Promise<Transaction[]> => {
+  if (!isSupabaseConfigured()) {
+    console.warn('Supabase not configured');
+    return [];
+  }
 
-export const loadTransactions = (): Transaction[] => {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (error) {
-    console.error("Failed to load data", error);
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('timestamp', { ascending: false });
+
+    if (error) {
+      console.error('Load transactions error:', error);
+      return [];
+    }
+
+    // Convert snake_case to camelCase
+    return data?.map(t => ({
+      id: t.id,
+      date: t.date,
+      code: t.code,
+      name: t.name,
+      type: t.type,
+      operationType: t.operation_type,
+      quantity: t.quantity,
+      unit: t.unit,
+      minStock: t.min_stock,
+      warehouse: t.warehouse,
+      destinationWarehouse: t.destination_warehouse,
+      destAddress: t.destination_address,
+      address: t.address,
+      responsible: t.responsible,
+      photos: t.photos || [],
+      timestamp: t.timestamp,
+      updatedAt: t.updated_at,
+      updatedBy: t.updated_by
+    })) || [];
+  } catch (err) {
+    console.error('Load transactions failed:', err);
     return [];
   }
 };
 
-export const saveTransactions = (transactions: Transaction[]) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-    // Sync to cloud in background
-    if (isSupabaseConfigured()) {
-      syncTransactionsToCloud(transactions).catch(console.error);
-    }
-  } catch (error) {
-    console.error("Failed to save data", error);
-    alert("Erro ao salvar dados! O armazenamento local pode estar cheio.");
+export const saveTransactions = async (transactions: Transaction[]): Promise<void> => {
+  if (!isSupabaseConfigured()) {
+    console.warn('Supabase not configured');
+    return;
   }
-};
-
-// Sync transactions to Supabase
-const syncTransactionsToCloud = async (transactions: Transaction[]) => {
-  if (!isSupabaseConfigured()) return;
 
   try {
-    // Convert camelCase to snake_case for Supabase
     const formatted = transactions.map(t => ({
       id: t.id,
       date: t.date,
@@ -64,76 +80,105 @@ const syncTransactionsToCloud = async (transactions: Transaction[]) => {
       .upsert(formatted, { onConflict: 'id' });
 
     if (error) {
-      console.error('Sync error:', error);
+      console.error('Save transactions error:', error);
+      throw error;
     }
   } catch (err) {
-    console.error('Sync failed:', err);
+    console.error('Save transactions failed:', err);
+    throw err;
   }
 };
 
-// Load from Supabase
-export const loadTransactionsFromCloud = async (): Promise<Transaction[] | null> => {
-  if (!isSupabaseConfigured()) return null;
+export const saveTransaction = async (transaction: Transaction): Promise<void> => {
+  if (!isSupabaseConfigured()) return;
+
+  try {
+    const formatted = {
+      id: transaction.id,
+      date: transaction.date,
+      code: transaction.code,
+      name: transaction.name,
+      type: transaction.type,
+      operation_type: transaction.operationType,
+      quantity: transaction.quantity,
+      unit: transaction.unit,
+      min_stock: transaction.minStock,
+      warehouse: transaction.warehouse,
+      destination_warehouse: transaction.destinationWarehouse,
+      destination_address: transaction.destAddress,
+      address: transaction.address,
+      responsible: transaction.responsible,
+      photos: transaction.photos,
+      timestamp: transaction.timestamp,
+      updated_at: transaction.updatedAt,
+      updated_by: transaction.updatedBy
+    };
+
+    const { error } = await supabase
+      .from('transactions')
+      .upsert(formatted, { onConflict: 'id' });
+
+    if (error) {
+      console.error('Save transaction error:', error);
+      throw error;
+    }
+  } catch (err) {
+    console.error('Save transaction failed:', err);
+    throw err;
+  }
+};
+
+export const deleteTransaction = async (id: string): Promise<void> => {
+  if (!isSupabaseConfigured()) return;
+
+  try {
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Delete transaction error:', error);
+      throw error;
+    }
+  } catch (err) {
+    console.error('Delete transaction failed:', err);
+    throw err;
+  }
+};
+
+// ============ INVENTORY SESSIONS (Supabase Only) ============
+
+export const loadInventorySessions = async (): Promise<InventorySession[]> => {
+  if (!isSupabaseConfigured()) return [];
 
   try {
     const { data, error } = await supabase
-      .from('transactions')
+      .from('inventory_sessions')
       .select('*')
-      .order('timestamp', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Load from cloud error:', error);
-      return null;
+      console.error('Load inventory sessions error:', error);
+      return [];
     }
 
-    // Convert snake_case to camelCase
-    return data?.map(t => ({
-      id: t.id,
-      date: t.date,
-      code: t.code,
-      name: t.name,
-      type: t.type,
-      operationType: t.operation_type,
-      quantity: t.quantity,
-      unit: t.unit,
-      minStock: t.min_stock,
-      warehouse: t.warehouse,
-      destinationWarehouse: t.destination_warehouse,
-      destAddress: t.destination_address,
-      address: t.address,
-      responsible: t.responsible,
-      photos: t.photos || [],
-      timestamp: t.timestamp,
-      updatedAt: t.updated_at,
-      updatedBy: t.updated_by
+    return data?.map(s => ({
+      id: s.id,
+      name: s.name,
+      responsible: s.responsible,
+      createdAt: s.created_at,
+      closedAt: s.closed_at,
+      status: s.status,
+      items: s.items || []
     })) || [];
   } catch (err) {
-    console.error('Load from cloud failed:', err);
-    return null;
-  }
-};
-
-// ============ INVENTORY SESSIONS ============
-
-export const loadInventorySessions = (): InventorySession[] => {
-  try {
-    const data = localStorage.getItem(INVENTORY_SESSIONS_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (error) {
+    console.error('Load inventory sessions failed:', err);
     return [];
   }
 };
 
-export const saveInventorySessions = (sessions: InventorySession[]) => {
-  localStorage.setItem(INVENTORY_SESSIONS_KEY, JSON.stringify(sessions));
-  // Sync to cloud
-  if (isSupabaseConfigured()) {
-    syncInventorySessionsToCloud(sessions).catch(console.error);
-  }
-};
-
-// Sync inventory sessions to Supabase
-const syncInventorySessionsToCloud = async (sessions: InventorySession[]) => {
+export const saveInventorySessions = async (sessions: InventorySession[]): Promise<void> => {
   if (!isSupabaseConfigured()) return;
 
   try {
@@ -152,66 +197,71 @@ const syncInventorySessionsToCloud = async (sessions: InventorySession[]) => {
       .upsert(formatted, { onConflict: 'id' });
 
     if (error) {
-      console.error('Inventory sync error:', error);
+      console.error('Save inventory sessions error:', error);
+      throw error;
     }
   } catch (err) {
-    console.error('Inventory sync failed:', err);
+    console.error('Save inventory sessions failed:', err);
+    throw err;
   }
 };
 
-// Load inventory sessions from Supabase
-export const loadInventorySessionsFromCloud = async (): Promise<InventorySession[] | null> => {
-  if (!isSupabaseConfigured()) return null;
+export const deleteInventorySession = async (id: string): Promise<void> => {
+  if (!isSupabaseConfigured()) return;
+
+  try {
+    const { error } = await supabase
+      .from('inventory_sessions')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  } catch (err) {
+    console.error('Delete inventory session failed:', err);
+    throw err;
+  }
+};
+
+// ============ USERS (Supabase Only) ============
+
+export const loadUsers = async (): Promise<User[]> => {
+  if (!isSupabaseConfigured()) {
+    // Return default admin if Supabase not configured
+    return [{ id: 'admin-01', name: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }];
+  }
 
   try {
     const { data, error } = await supabase
-      .from('inventory_sessions')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from('users')
+      .select('*');
 
     if (error) {
-      console.error('Load inventory from cloud error:', error);
-      return null;
+      console.error('Load users error:', error);
+      return [{ id: 'admin-01', name: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }];
     }
 
-    return data?.map(s => ({
-      id: s.id,
-      name: s.name,
-      responsible: s.responsible,
-      createdAt: s.created_at,
-      closedAt: s.closed_at,
-      status: s.status,
-      items: s.items || []
-    })) || [];
+    if (!data || data.length === 0) {
+      // Create default admin if no users exist
+      const defaultAdmin: User = { id: 'admin-01', name: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() };
+      await saveUsers([defaultAdmin]);
+      return [defaultAdmin];
+    }
+
+    return data.map(u => ({
+      id: u.id,
+      name: u.name,
+      password: u.password,
+      profile: u.profile,
+      active: u.active,
+      lastLogin: u.last_login
+    }));
   } catch (err) {
-    console.error('Load inventory from cloud failed:', err);
-    return null;
+    console.error('Load users failed:', err);
+    return [{ id: 'admin-01', name: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }];
   }
 };
 
-// ============ USERS ============
-
-export const loadUsers = (): User[] => {
-  try {
-    const data = localStorage.getItem(USERS_KEY);
-    return data ? JSON.parse(data) : [
-      { id: 'admin-01', name: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }
-    ];
-  } catch (error) {
-    return [];
-  }
-};
-
-export const saveUsers = (users: User[]) => {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  // Sync to cloud
-  if (isSupabaseConfigured()) {
-    syncUsersToCloud(users).catch(console.error);
-  }
-};
-
-// Sync users to Supabase
-const syncUsersToCloud = async (users: User[]) => {
+export const saveUsers = async (users: User[]): Promise<void> => {
   if (!isSupabaseConfigured()) return;
 
   try {
@@ -229,50 +279,26 @@ const syncUsersToCloud = async (users: User[]) => {
       .upsert(formatted, { onConflict: 'id' });
 
     if (error) {
-      console.error('Users sync error:', error);
+      console.error('Save users error:', error);
+      throw error;
     }
   } catch (err) {
-    console.error('Users sync failed:', err);
-  }
-};
-
-// Load users from Supabase
-export const loadUsersFromCloud = async (): Promise<User[] | null> => {
-  if (!isSupabaseConfigured()) return null;
-
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*');
-
-    if (error) {
-      console.error('Load users from cloud error:', error);
-      return null;
-    }
-
-    return data?.map(u => ({
-      id: u.id,
-      name: u.name,
-      password: u.password,
-      profile: u.profile,
-      active: u.active,
-      lastLogin: u.last_login
-    })) || [];
-  } catch (err) {
-    console.error('Load users from cloud failed:', err);
-    return null;
+    console.error('Save users failed:', err);
+    throw err;
   }
 };
 
 // ============ AUTO BACKUP (17:45 daily, 7 days retention) ============
 
-export const createAutoBackup = async () => {
+const LAST_BACKUP_KEY = 'kardex_last_auto_backup';
+
+export const createAutoBackup = async (): Promise<void> => {
   if (!isSupabaseConfigured()) return;
 
   try {
-    const transactions = loadTransactions();
-    const users = loadUsers();
-    const inventorySessions = loadInventorySessions();
+    const transactions = await loadTransactions();
+    const users = await loadUsers();
+    const inventorySessions = await loadInventorySessions();
 
     const backupData = {
       id: crypto.randomUUID(),
@@ -291,7 +317,6 @@ export const createAutoBackup = async () => {
     } else {
       console.log('✅ Backup automático criado:', new Date().toLocaleString());
       localStorage.setItem(LAST_BACKUP_KEY, Date.now().toString());
-      // Clean old backups
       await cleanOldBackups();
     }
   } catch (err) {
@@ -299,7 +324,7 @@ export const createAutoBackup = async () => {
   }
 };
 
-const cleanOldBackups = async () => {
+const cleanOldBackups = async (): Promise<void> => {
   if (!isSupabaseConfigured()) return;
 
   try {
@@ -318,69 +343,83 @@ const cleanOldBackups = async () => {
   }
 };
 
-// Schedule auto backup at 17:45 every day
-export const scheduleAutoBackup = () => {
+export const scheduleAutoBackup = (): void => {
   const checkAndBackup = () => {
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
 
-    // Check if it's 17:45
     if (hours === 17 && minutes === 45) {
       const lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
       const today = new Date().toDateString();
       const lastBackupDate = lastBackup ? new Date(parseInt(lastBackup)).toDateString() : '';
 
-      // Only backup once per day
       if (lastBackupDate !== today) {
         createAutoBackup();
       }
     }
   };
 
-  // Check every minute
   setInterval(checkAndBackup, 60 * 1000);
-
-  // Also check immediately on load
   checkAndBackup();
-
   console.log('📅 Backup automático agendado para 17:45');
 };
 
 // ============ ADMINISTRATIVE ============
 
-export const wipeTransactions = () => {
-  localStorage.removeItem(STORAGE_KEY);
+export const wipeTransactions = async (): Promise<void> => {
+  if (!isSupabaseConfigured()) return;
+
+  try {
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .neq('id', '');
+
+    if (error) throw error;
+  } catch (err) {
+    console.error('Wipe transactions failed:', err);
+    throw err;
+  }
 };
 
-export const restoreBackup = (jsonData: string) => {
+export const restoreBackup = async (jsonData: string): Promise<boolean> => {
   try {
     const data = JSON.parse(jsonData);
+
     if (Array.isArray(data)) {
-      saveTransactions(data);
+      // Just transactions array
+      await saveTransactions(data);
       return true;
     }
-    // Support full backup format
+
+    // Full backup format
     if (data.transactions) {
-      saveTransactions(data.transactions);
-      if (data.users) saveUsers(data.users);
-      if (data.inventory_sessions) saveInventorySessions(data.inventory_sessions);
+      await saveTransactions(data.transactions);
+      if (data.users) await saveUsers(data.users);
+      if (data.inventory_sessions) await saveInventorySessions(data.inventory_sessions);
       return true;
     }
+
     return false;
   } catch (e) {
+    console.error('Restore backup failed:', e);
     return false;
   }
 };
 
-export const exportToJson = (transactions: Transaction[]) => {
-  // Export full backup with all data
+export const exportToJson = async (): Promise<void> => {
+  const transactions = await loadTransactions();
+  const users = await loadUsers();
+  const inventorySessions = await loadInventorySessions();
+
   const fullBackup = {
     transactions,
-    users: loadUsers(),
-    inventory_sessions: loadInventorySessions(),
+    users,
+    inventory_sessions: inventorySessions,
     exported_at: new Date().toISOString()
   };
+
   const dataStr = JSON.stringify(fullBackup, null, 2);
   const blob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);

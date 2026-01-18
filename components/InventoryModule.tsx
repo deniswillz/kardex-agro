@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ClipboardList, Plus, Search, Calendar, User as UserIcon, AlertCircle, Clock, ArrowRight, Trash2, TrendingUp, BarChart } from 'lucide-react';
 import { InventorySession, User } from '../types';
-import { loadInventorySessions, saveInventorySessions } from '../services/storage';
+import { loadInventorySessions, saveInventorySessions, deleteInventorySession } from '../services/storage';
 import { importInventoryFromExcel } from '../services/excel';
 import { InventorySessionExecution } from './InventorySessionExecution';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -22,16 +22,14 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
-  // Carregamento inicial do localStorage
+  // Carregamento inicial do Supabase
   useEffect(() => {
-    const data = loadInventorySessions();
-    setSessions(data);
+    const loadData = async () => {
+      const data = await loadInventorySessions();
+      setSessions(data);
+    };
+    loadData();
   }, []);
-
-  // Efeito para persistência automática sempre que a lista de sessões for alterada.
-  useEffect(() => {
-    saveInventorySessions(sessions);
-  }, [sessions]);
 
   const handleCreateSession = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -48,7 +46,9 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
         items
       };
 
-      setSessions(prev => [newSession, ...prev]);
+      const updated = [newSession, ...sessions];
+      setSessions(updated);
+      await saveInventorySessions(updated);
       setActiveSessionId(newSession.id);
     } catch (err) {
       alert("Erro ao processar planilha. Verifique as colunas A, D, E, I, N, O.");
@@ -61,15 +61,18 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
     setDeleteModalOpen(true);
   };
 
-  const confirmDeleteSession = () => {
+  const confirmDeleteSession = async () => {
     if (sessionToDelete) {
+      await deleteInventorySession(sessionToDelete);
       setSessions(prev => prev.filter(s => s.id !== sessionToDelete));
       setSessionToDelete(null);
     }
   };
 
-  const handleSaveSession = (updatedSession: InventorySession) => {
-    setSessions(prev => prev.map(s => s.id === updatedSession.id ? updatedSession : s));
+  const handleSaveSession = async (updatedSession: InventorySession) => {
+    const updated = sessions.map(s => s.id === updatedSession.id ? updatedSession : s);
+    setSessions(updated);
+    await saveInventorySessions(updated);
   };
 
   const filteredSessions = sessions.filter(s => {

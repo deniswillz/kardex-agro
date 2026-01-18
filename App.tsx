@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Transaction, User as UserType } from './types';
 import {
-    loadTransactions, saveTransactions, loadUsers, saveUsers,
+    loadTransactions, saveTransaction, saveTransactions, deleteTransaction, loadUsers, saveUsers,
     wipeTransactions, restoreBackup, exportToJson, scheduleAutoBackup
 } from './services/storage';
 import { importFromExcel, exportToExcel, downloadTemplate } from './services/excel';
@@ -32,38 +32,50 @@ const App: React.FC = () => {
     const [prefillData, setPrefillData] = useState<{ code: string; warehouse: string; address?: string } | undefined>();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [loginForm, setLoginForm] = useState({ name: '', password: '' });
+    const [isLoading, setIsLoading] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Initial load
+    // Initial load from Supabase
     useEffect(() => {
-        const savedTransactions = loadTransactions();
-        const savedUsers = loadUsers();
-        setTransactions(savedTransactions);
-        setUsers(savedUsers);
-
-        // Schedule auto backup
-        scheduleAutoBackup();
+        const initializeApp = async () => {
+            setIsLoading(true);
+            try {
+                const [savedTransactions, savedUsers] = await Promise.all([
+                    loadTransactions(),
+                    loadUsers()
+                ]);
+                setTransactions(savedTransactions);
+                setUsers(savedUsers);
+            } catch (err) {
+                console.error('Failed to load data:', err);
+            } finally {
+                setIsLoading(false);
+            }
+            // Schedule auto backup
+            scheduleAutoBackup();
+        };
+        initializeApp();
     }, []);
 
     // Use custom hook for stock calculations
     const { stockItems, criticalItems, stats, timeFilter, setTimeFilter } = useStockCalculation(transactions);
 
     // Login handler
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         const user = users.find(u => u.name === loginForm.name && u.password === loginForm.password && u.active);
         if (user) {
             setCurrentUser({ ...user, lastLogin: Date.now() });
             const updatedUsers = users.map(u => u.id === user.id ? { ...u, lastLogin: Date.now() } : u);
             setUsers(updatedUsers);
-            saveUsers(updatedUsers);
+            await saveUsers(updatedUsers);
         } else {
             alert('Usuário ou senha inválidos!');
         }
     };
 
     // Transaction handlers
-    const handleAddTransaction = (data: Omit<Transaction, 'id' | 'timestamp'>) => {
+    const handleAddTransaction = async (data: Omit<Transaction, 'id' | 'timestamp'>) => {
         const newTx: Transaction = {
             ...data,
             id: crypto.randomUUID(),
@@ -71,25 +83,32 @@ const App: React.FC = () => {
         };
         const updated = [...transactions, newTx];
         setTransactions(updated);
-        saveTransactions(updated);
+        await saveTransaction(newTx);
         setView('HISTORY');
         setPrefillData(undefined);
     };
 
-    const handleUpdateTransaction = (id: string, data: Omit<Transaction, 'id' | 'timestamp'>) => {
-        const updated = transactions.map(t =>
-            t.id === id ? { ...t, ...data, updatedAt: Date.now(), updatedBy: currentUser?.name } : t
-        );
+    const handleUpdateTransaction = async (id: string, data: Omit<Transaction, 'id' | 'timestamp'>) => {
+        const existingTx = transactions.find(t => t.id === id);
+        if (!existingTx) return;
+
+        const updatedTx: Transaction = {
+            ...existingTx,
+            ...data,
+            updatedAt: Date.now(),
+            updatedBy: currentUser?.name
+        };
+        const updated = transactions.map(t => t.id === id ? updatedTx : t);
         setTransactions(updated);
-        saveTransactions(updated);
+        await saveTransaction(updatedTx);
         setEditingTransaction(null);
         setView('HISTORY');
     };
 
-    const handleDeleteTransaction = (id: string) => {
+    const handleDeleteTransaction = async (id: string) => {
         const updated = transactions.filter(t => t.id !== id);
         setTransactions(updated);
-        saveTransactions(updated);
+        await deleteTransaction(id);
     };
 
     const handleEditTransaction = (tx: Transaction) => {
@@ -109,7 +128,7 @@ const App: React.FC = () => {
                 const imported = await importFromExcel(file);
                 const updated = [...transactions, ...imported];
                 setTransactions(updated);
-                saveTransactions(updated);
+                await saveTransactions(updated);
                 alert(`${imported.length} registros importados com sucesso!`);
             } catch (err) {
                 alert('Erro ao importar arquivo. Verifique o formato.');
@@ -119,22 +138,24 @@ const App: React.FC = () => {
     };
 
     // Settings handlers
-    const handleWipeData = () => {
-        wipeTransactions();
+    const handleWipeData = async () => {
+        await wipeTransactions();
         setTransactions([]);
     };
 
-    const handleRestoreData = (json: string) => {
-        if (restoreBackup(json)) {
-            setTransactions(loadTransactions());
+    const handleRestoreData = async (json: string) => {
+        const success = await restoreBackup(json);
+        if (success) {
+            const restored = await loadTransactions();
+            setTransactions(restored);
             alert('Backup restaurado com sucesso!');
         } else {
             alert('Erro ao restaurar backup. Verifique o formato do arquivo.');
         }
     };
 
-    const handleBackup = () => {
-        exportToJson(transactions);
+    const handleBackup = async () => {
+        await exportToJson();
     };
 
     const handleExportKardex = () => {
@@ -146,6 +167,21 @@ const App: React.FC = () => {
         setPrefillData({ code, warehouse, address });
         setView('NEW');
     };
+
+    // Loading Screen
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4 shadow-lg shadow-primary-500/30 animate-pulse">
+                        <Package size={32} className="text-white" />
+                    </div>
+                    <h1 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Nano Kardex</h1>
+                    <p className="text-slate-400 text-sm">Carregando dados...</p>
+                </div>
+            </div>
+        );
+    }
 
     // Login Screen
     if (!currentUser) {
@@ -325,7 +361,7 @@ const App: React.FC = () => {
                         stockItems={stockItems}
                         onQuickAction={handleQuickAction}
                         transactions={transactions}
-                        onUpdateTransactions={(updated) => { setTransactions(updated); saveTransactions(updated); }}
+                        onUpdateTransactions={async (updated) => { setTransactions(updated); await saveTransactions(updated); }}
                     />
                 )}
 
