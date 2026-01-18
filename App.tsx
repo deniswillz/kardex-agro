@@ -24,7 +24,7 @@ function App() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [prefill, setPrefill] = useState<{ code: string; warehouse: string; address?: string } | undefined>();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>(30);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -48,22 +48,22 @@ function App() {
   const stockItems: InventoryItem[] = useMemo(() => {
     const map: Record<string, InventoryItem> = {};
     const lastCounts: Record<string, { date: string, quantity: number, ts: number }> = {};
-    
+
     transactions.forEach(t => {
       if (!MAIN_WAREHOUSES.includes(t.warehouse)) return;
 
       const normalizedAddress = (t.address || '').trim().toUpperCase();
       const key = `${t.code}_${t.warehouse}_${normalizedAddress}`;
-      
+
       if (!map[key]) {
-        map[key] = { 
-          key, code: t.code, name: t.name, warehouse: t.warehouse, 
-          address: t.address || '', unit: t.unit, balance: 0, 
+        map[key] = {
+          key, code: t.code, name: t.name, warehouse: t.warehouse,
+          address: t.address || '', unit: t.unit, balance: 0,
           minStock: t.minStock || 0, lastCount: t.date, isCritical: false,
           isDivergent: false, entries: 0, exits: 0
         };
       }
-      
+
       if (t.timestamp > new Date(map[key].lastCount).getTime()) {
         map[key].name = t.name;
         map[key].minStock = t.minStock || 0;
@@ -86,7 +86,7 @@ function App() {
 
     const globalBalances: Record<string, number> = {};
     const minStocks: Record<string, number> = {};
-    
+
     Object.values(map).forEach(item => {
       globalBalances[item.code] = (globalBalances[item.code] || 0) + item.balance;
       minStocks[item.code] = Math.max(minStocks[item.code] || 0, item.minStock);
@@ -97,8 +97,8 @@ function App() {
       const isCritical = minStocks[item.code] > 0 && globalBalances[item.code] <= minStocks[item.code];
       const isDivergent = lastCount !== undefined && lastCount.quantity !== item.balance;
 
-      return { 
-        ...item, 
+      return {
+        ...item,
         isCritical,
         isDivergent,
         lastCountQuantity: lastCount?.quantity
@@ -109,7 +109,7 @@ function App() {
   const criticalItems = useMemo(() => {
     const uniqueCodes = new Set<string>();
     const results: InventoryItem[] = [];
-    
+
     stockItems.forEach(i => {
       if ((i.isCritical || i.isDivergent) && !uniqueCodes.has(i.code)) {
         uniqueCodes.add(i.code);
@@ -126,12 +126,12 @@ function App() {
     const now = new Date();
     const cutoff = new Date();
     cutoff.setDate(now.getDate() - timeFilter);
-    
-    const filtered = transactions.filter(t => 
-      new Date(t.date) >= cutoff && 
+
+    const filtered = transactions.filter(t =>
+      new Date(t.date) >= cutoff &&
       MAIN_WAREHOUSES.includes(t.warehouse)
     );
-    
+
     return {
       totalStockCount: 0,
       totalTransactions: filtered.length,
@@ -152,16 +152,16 @@ function App() {
   const handleAddTransaction = (newTx: Omit<Transaction, 'id' | 'timestamp'>) => {
     const mainTx: Transaction = { ...newTx, id: crypto.randomUUID(), timestamp: Date.now() };
     const newBatch = [mainTx];
-    
+
     if (newTx.type === 'SAIDA' && newTx.destinationWarehouse && newTx.operationType === 'MOVIMENTACAO') {
-      const transferTx: Transaction = { 
-        ...newTx, id: crypto.randomUUID(), timestamp: Date.now() + 1, 
-        type: 'ENTRADA', warehouse: newTx.destinationWarehouse, 
-        destinationWarehouse: undefined, address: newTx.address 
+      const transferTx: Transaction = {
+        ...newTx, id: crypto.randomUUID(), timestamp: Date.now() + 1,
+        type: 'ENTRADA', warehouse: newTx.destinationWarehouse,
+        destinationWarehouse: undefined, address: newTx.address
       };
       newBatch.push(transferTx);
     }
-    
+
     setTransactions(prev => [...newBatch, ...prev]);
     setView('HISTORY');
     setPrefill(undefined);
@@ -180,7 +180,7 @@ function App() {
   };
 
   const NavButton = ({ id, icon: Icon, label, active }: any) => (
-    <button onClick={() => { setView(id); setIsMobileMenuOpen(false); if(id==='FORM'){setEditingTransaction(null); setPrefill(undefined);} }}
+    <button onClick={() => { setView(id); setIsMobileMenuOpen(false); if (id === 'FORM') { setEditingTransaction(null); setPrefill(undefined); } }}
       className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all font-bold text-sm ${active ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>
       <Icon size={20} className={active ? 'text-primary-600' : 'text-slate-400'} /> <span>{label}</span>
     </button>
@@ -229,15 +229,15 @@ function App() {
           <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 shrink-0">
             <div>
               <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase">
-                {view === 'DASHBOARD' ? 'Visão Geral' : 
-                 view === 'STOCK' ? 'Saldo Consolidado (01, 20, 22)' : 
-                 view === 'INVENTORY' ? 'Inventários Físicos' :
-                 view === 'FORM' ? 'Movimentação Manual' : 
-                 view === 'HISTORY' ? 'Histórico Kardex' : 'Painel de Configurações'}
+                {view === 'DASHBOARD' ? 'Visão Geral' :
+                  view === 'STOCK' ? 'Saldo Consolidado (01, 20, 22)' :
+                    view === 'INVENTORY' ? 'Inventários Físicos' :
+                      view === 'FORM' ? 'Movimentação Manual' :
+                        view === 'HISTORY' ? 'Histórico Kardex' : 'Painel de Configurações'}
               </h2>
               <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
-                 <span className="w-6 h-px bg-slate-200"></span>
-                 Gestão Logística e Governança
+                <span className="w-6 h-px bg-slate-200"></span>
+                Gestão Logística e Governança
               </p>
             </div>
             {view === 'DASHBOARD' && (
@@ -253,7 +253,7 @@ function App() {
           <div className="flex-1 min-h-0">
             {view === 'DASHBOARD' && (
               <div className="space-y-8 pb-10">
-                <CriticalAlerts criticalItems={criticalItems} onAction={(code) => handleActionMove(code, '01')} />
+                <CriticalAlerts criticalItems={criticalItems} onAction={() => setView('STOCK')} />
                 <StatsCards stats={stats} periodLabel={`${timeFilter} dias`} />
                 <Dashboard transactions={transactions} />
               </div>
@@ -263,9 +263,9 @@ function App() {
             {view === 'HISTORY' && <TransactionHistory transactions={transactions} onDelete={(id) => setTransactions(t => t.filter(x => x.id !== id))} onEdit={(t) => { setEditingTransaction(t); setView('FORM'); }} />}
             {view === 'FORM' && <MovementForm onAdd={handleAddTransaction} onUpdate={handleUpdateTransaction} onCancel={() => setView('STOCK')} transactions={transactions} initialData={editingTransaction} prefill={prefill} />}
             {view === 'SETTINGS' && (
-              <Settings 
-                users={users} onSaveUsers={setUsers} onWipeData={() => { wipeTransactions(); setTransactions([]); }} 
-                onRestoreData={(json) => { if (restoreBackup(json)) { setTransactions(loadTransactions()); alert('Sucesso!'); } }} 
+              <Settings
+                users={users} onSaveUsers={setUsers} onWipeData={() => { wipeTransactions(); setTransactions([]); }}
+                onRestoreData={(json) => { if (restoreBackup(json)) { setTransactions(loadTransactions()); alert('Sucesso!'); } }}
                 onBackup={() => exportToJson(transactions)}
                 onImportExcel={() => { setView('STOCK'); fileInputRef.current?.click(); }}
                 onExportKardex={() => exportToExcel(transactions)}
@@ -287,7 +287,7 @@ function App() {
 
       <input type="file" ref={fileInputRef} onChange={async (e) => {
         const file = e.target.files?.[0];
-        if(file) {
+        if (file) {
           const data = await importFromExcel(file);
           setTransactions([...data, ...transactions]);
         }

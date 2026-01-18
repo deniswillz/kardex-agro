@@ -11,8 +11,8 @@ interface CriticalAlertsProps {
 export const CriticalAlerts: React.FC<CriticalAlertsProps> = ({ criticalItems, onAction }) => {
   if (criticalItems.length === 0) return null;
 
-  // Separar itens por tipo de alerta
-  const lowStockItems = criticalItems.filter(item => item.isCritical && !item.isDivergent);
+  // Separar itens por tipo de alerta (mesmo SKU pode aparecer em ambas se tiver os dois problemas)
+  const lowStockItems = criticalItems.filter(item => item.isCritical);
   const divergentItems = criticalItems.filter(item => item.isDivergent);
 
   // Agrupar por SKU (mantendo apenas um item por código)
