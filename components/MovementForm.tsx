@@ -12,10 +12,11 @@ interface MovementFormProps {
   prefill?: { code: string; warehouse: string; address?: string };
 }
 
+const MAIN_WAREHOUSES = ['01', '20', '22'];
+
 export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onCancel, transactions, initialData, prefill }) => {
   const [type, setType] = useState<MovementType>('ENTRADA');
   const [opType, setOpType] = useState<OperationType>('MOVIMENTACAO');
-  const [exitMode, setExitMode] = useState<'BAIXA' | 'TRANSFERENCIA'>('BAIXA');
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -32,18 +33,28 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-detect warehouse when SKU is entered (for ENTRADA)
   useEffect(() => {
-    if (code) {
-      const match = [...transactions].sort((a, b) => b.timestamp - a.timestamp).find(t => t.code === code);
+    if (code && type === 'ENTRADA') {
+      // Find the most recent transaction for this SKU in main warehouses
+      const match = [...transactions]
+        .filter(t => t.code === code && MAIN_WAREHOUSES.includes(t.warehouse))
+        .sort((a, b) => b.timestamp - a.timestamp)[0];
+
       if (match) {
         setName(match.name);
         setUnit(match.unit || 'UN');
         setMinStock(match.minStock || 0);
+        // Auto-set origin warehouse to last used
+        if (!prefill?.warehouse) {
+          setOriginWarehouse(match.warehouse);
+        }
         if (!address && !prefill?.address) setAddress(match.address || '');
       }
     }
-  }, [code, transactions]);
+  }, [code, type, transactions, prefill]);
 
+  // Calculate current stock
   useEffect(() => {
     if (code && originWarehouse) {
       const normalizedAddress = (address || '').trim().toUpperCase();
@@ -61,6 +72,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
     }
   }, [code, originWarehouse, address, transactions]);
 
+  // Load initial data or prefill
   useEffect(() => {
     if (initialData) {
       setType(initialData.type);
@@ -72,7 +84,6 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
       setMinStock(initialData.minStock || 0);
       setOriginWarehouse(initialData.warehouse);
       setDestWarehouse(initialData.destinationWarehouse || '');
-      setExitMode(initialData.destinationWarehouse ? 'TRANSFERENCIA' : 'BAIXA');
       setAddress(initialData.address || '');
       setDate(initialData.date);
       setPhotos(initialData.photos || []);
@@ -109,7 +120,8 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
       return;
     }
 
-    if (type === 'SAIDA' && exitMode === 'TRANSFERENCIA' && originWarehouse === destWarehouse) {
+    // For SAIDA, always require destination
+    if (type === 'SAIDA' && opType === 'MOVIMENTACAO' && originWarehouse === destWarehouse && destWarehouse) {
       alert("A Origem e o Destino não podem ser o mesmo armazém.");
       return;
     }
@@ -124,7 +136,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
       unit,
       minStock: Number(minStock || 0),
       warehouse: originWarehouse,
-      destinationWarehouse: (type === 'SAIDA' && exitMode === 'TRANSFERENCIA') ? destWarehouse : undefined,
+      destinationWarehouse: (type === 'SAIDA' && opType === 'MOVIMENTACAO' && destWarehouse) ? destWarehouse : undefined,
       address,
       responsible: 'Admin Agrosystem',
       photos
@@ -136,60 +148,48 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
 
   return (
     <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-full animate-slide-up max-w-4xl mx-auto">
+      {/* TYPE TABS */}
       <div className="flex bg-slate-100 p-1.5">
         <button
           type="button"
-          onClick={() => setType('ENTRADA')}
-          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${type === 'ENTRADA' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+          onClick={() => { setType('ENTRADA'); setOpType('MOVIMENTACAO'); }}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${type === 'ENTRADA' && opType === 'MOVIMENTACAO' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
         >
-          <div className={`w-2 h-2 rounded-full ${type === 'ENTRADA' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+          <div className={`w-2 h-2 rounded-full ${type === 'ENTRADA' && opType === 'MOVIMENTACAO' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
           Entrada
         </button>
         <button
           type="button"
-          onClick={() => setType('SAIDA')}
-          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${type === 'SAIDA' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+          onClick={() => { setType('SAIDA'); setOpType('MOVIMENTACAO'); }}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${type === 'SAIDA' && opType === 'MOVIMENTACAO' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
         >
-          <div className={`w-2 h-2 rounded-full ${type === 'SAIDA' ? 'bg-red-500' : 'bg-slate-300'}`} />
+          <div className={`w-2 h-2 rounded-full ${type === 'SAIDA' && opType === 'MOVIMENTACAO' ? 'bg-red-500' : 'bg-slate-300'}`} />
           Saída
+        </button>
+        <button
+          type="button"
+          onClick={() => { setOpType('CONTAGEM'); setType('ENTRADA'); }}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${opType === 'CONTAGEM' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          <div className={`w-2 h-2 rounded-full ${opType === 'CONTAGEM' ? 'bg-amber-500' : 'bg-slate-300'}`} />
+          Contagem
         </button>
       </div>
 
+      {/* HEADER */}
       <div className="p-4 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button type="button" onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
             <ArrowLeft size={20} />
           </button>
           <h2 className="font-black text-slate-800 uppercase tracking-tight text-base">
-            {type === 'ENTRADA' ? 'Recebimento de Mercadoria' : 'Expedição / Baixa'}
+            {opType === 'CONTAGEM' ? 'Registro de Contagem' : type === 'ENTRADA' ? 'Recebimento de Mercadoria' : 'Expedição / Transferência'}
           </h2>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
-        {/* TIPO DE OPERAÇÃO */}
-        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Modo de Registro *</label>
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => setOpType('MOVIMENTACAO')}
-              className={`p-3 rounded-xl border-2 text-left transition-all ${opType === 'MOVIMENTACAO' ? 'border-primary-600 bg-white shadow-sm' : 'border-slate-200 bg-slate-100/50'}`}
-            >
-              <span className={`block text-xs font-black uppercase ${opType === 'MOVIMENTACAO' ? 'text-primary-700' : 'text-slate-500'}`}>Movimentação</span>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Impacta no Saldo</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setOpType('CONTAGEM')}
-              className={`p-3 rounded-xl border-2 text-left transition-all ${opType === 'CONTAGEM' ? 'border-amber-500 bg-white shadow-sm' : 'border-slate-200 bg-slate-100/50'}`}
-            >
-              <span className={`block text-xs font-black uppercase ${opType === 'CONTAGEM' ? 'text-amber-700' : 'text-slate-500'}`}>Apenas Contagem</span>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Auditoria de estoque</p>
-            </button>
-          </div>
-        </div>
-
+        {/* SKU AND STOCK */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Código do produto *</label>
@@ -216,6 +216,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           </div>
         </div>
 
+        {/* DESCRIPTION */}
         <div>
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Descrição Técnica *</label>
           <input
@@ -227,9 +228,12 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           />
         </div>
 
+        {/* QUANTITY */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Quantidade a Movimentar *</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+              {opType === 'CONTAGEM' ? 'Quantidade Contada *' : 'Quantidade a Movimentar *'}
+            </label>
             <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:border-primary-500 transition-all">
               <input
                 type="number"
@@ -256,11 +260,11 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           </div>
         </div>
 
-        {/* ORIGEM E DESTINO */}
-        <div className="space-y-4">
+        {/* LOCATION - ENTRADA/CONTAGEM */}
+        {(type === 'ENTRADA' || opType === 'CONTAGEM') && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Armazém de Origem *</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Armazém *</label>
               <select
                 value={originWarehouse}
                 onChange={(e) => setOriginWarehouse(e.target.value)}
@@ -272,7 +276,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Endereço de Origem</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Endereço</label>
               <input
                 type="text"
                 value={address}
@@ -282,59 +286,64 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
               />
             </div>
           </div>
+        )}
 
-          {type === 'SAIDA' && (
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Tipo de Saída</label>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <button
-                  type="button"
-                  onClick={() => setExitMode('BAIXA')}
-                  className={`p-3 rounded-xl border-2 flex items-center gap-2 transition-all ${exitMode === 'BAIXA' ? 'border-red-500 bg-white shadow-sm' : 'border-slate-200 bg-slate-100/50'}`}
+        {/* LOCATION - SAIDA (Origem + Destino) */}
+        {type === 'SAIDA' && opType === 'MOVIMENTACAO' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Armazém de Origem *</label>
+                <select
+                  value={originWarehouse}
+                  onChange={(e) => setOriginWarehouse(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-black outline-none focus:border-primary-500"
+                  required
                 >
-                  <LogOut size={16} className={exitMode === 'BAIXA' ? 'text-red-500' : 'text-slate-400'} />
-                  <span className={`text-[10px] font-black uppercase ${exitMode === 'BAIXA' ? 'text-red-700' : 'text-slate-500'}`}>Apenas Saída / Baixa</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setExitMode('TRANSFERENCIA')}
-                  className={`p-3 rounded-xl border-2 flex items-center gap-2 transition-all ${exitMode === 'TRANSFERENCIA' ? 'border-primary-600 bg-white shadow-sm' : 'border-slate-200 bg-slate-100/50'}`}
-                >
-                  <ArrowRightLeft size={16} className={exitMode === 'TRANSFERENCIA' ? 'text-primary-600' : 'text-slate-400'} />
-                  <span className={`text-[10px] font-black uppercase ${exitMode === 'TRANSFERENCIA' ? 'text-primary-700' : 'text-slate-500'}`}>Transferência Interna</span>
-                </button>
+                  <option value="">Selecione...</option>
+                  {WAREHOUSES.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
               </div>
-
-              {exitMode === 'TRANSFERENCIA' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-down">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Armazém Destino *</label>
-                    <select
-                      value={destWarehouse}
-                      onChange={(e) => setDestWarehouse(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black outline-none focus:border-primary-500"
-                      required
-                    >
-                      <option value="">Selecione...</option>
-                      {WAREHOUSES.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Endereço Destino</label>
-                    <input
-                      type="text"
-                      value={destAddress}
-                      onChange={(e) => setDestAddress(e.target.value)}
-                      placeholder="Novo Endereço"
-                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-primary-500"
-                    />
-                  </div>
-                </div>
-              )}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Endereço de Origem</label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Ex: P-01-A"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm font-bold outline-none focus:border-primary-500"
+                />
+              </div>
             </div>
-          )}
-        </div>
 
+            {/* DESTINATION */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Armazém Destino</label>
+                <select
+                  value={destWarehouse}
+                  onChange={(e) => setDestWarehouse(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-3.5 text-sm font-black outline-none focus:border-primary-500"
+                >
+                  <option value="">Apenas Baixa (sem destino)</option>
+                  {WAREHOUSES.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Endereço Destino</label>
+                <input
+                  type="text"
+                  value={destAddress}
+                  onChange={(e) => setDestAddress(e.target.value)}
+                  placeholder="Novo Endereço"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-3.5 text-sm font-bold outline-none focus:border-primary-500"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* RESPONSIBLE AND DATE */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Responsável</label>
@@ -349,13 +358,16 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           </div>
         </div>
 
+        {/* SUBMIT */}
         <div className="pt-6 border-t border-slate-100">
           <button
             type="submit"
-            className={`w-full py-4 rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3 ${type === 'ENTRADA' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}
+            className={`w-full py-4 rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3 ${opType === 'CONTAGEM' ? 'bg-amber-600 hover:bg-amber-700' :
+                type === 'ENTRADA' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
+              }`}
           >
             <Save size={20} />
-            Confirmar Registro de Kardex
+            {opType === 'CONTAGEM' ? 'Registrar Contagem' : 'Confirmar Registro de Kardex'}
           </button>
         </div>
       </form>

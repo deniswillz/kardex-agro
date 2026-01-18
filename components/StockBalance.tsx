@@ -23,10 +23,10 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
 
     transactions.forEach(t => {
       if (!MAIN_WAREHOUSES.includes(t.warehouse)) return;
-      
+
       const normalizedAddress = (t.address || '').trim().toUpperCase();
       const key = `${t.code}_${t.warehouse}_${normalizedAddress}`;
-      
+
       if (!map[key]) {
         map[key] = {
           key, code: t.code, name: t.name, warehouse: t.warehouse, address: t.address || '',
@@ -87,8 +87,8 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
   }, [transactions]);
 
   const filteredData = stockData.filter(item => {
-    const matchesSearch = item.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesWarehouse = warehouseFilter === 'ALL' || item.warehouse === warehouseFilter;
     return matchesSearch && matchesWarehouse;
   });
@@ -116,26 +116,26 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
       <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/30">
         <div className="relative flex-1 max-w-lg">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Pesquisar SKU ou Descrição Técnica..." 
+          <input
+            type="text"
+            placeholder="Pesquisar SKU ou Descrição Técnica..."
             className="pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm w-full outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2">
-           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtrar Armazém:</span>
-           <select 
-             className="bg-white border border-slate-200 rounded-lg text-[10px] font-black px-3 py-2 uppercase outline-none focus:ring-2 focus:ring-primary-500"
-             value={warehouseFilter}
-             onChange={(e) => setWarehouseFilter(e.target.value)}
-           >
-              <option value="ALL">Todos (01, 20, 22)</option>
-              <option value="01">Armazém 01</option>
-              <option value="20">Armazém 20</option>
-              <option value="22">Armazém 22</option>
-           </select>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtrar Armazém:</span>
+          <select
+            className="bg-white border border-slate-200 rounded-lg text-[10px] font-black px-3 py-2 uppercase outline-none focus:ring-2 focus:ring-primary-500"
+            value={warehouseFilter}
+            onChange={(e) => setWarehouseFilter(e.target.value)}
+          >
+            <option value="ALL">Todos (01, 20, 22)</option>
+            <option value="01">Armazém 01</option>
+            <option value="20">Armazém 20</option>
+            <option value="22">Armazém 22</option>
+          </select>
         </div>
       </div>
 
@@ -163,8 +163,8 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
                       <Package size={20} />
                     </div>
                     <div>
-                      <div className="text-xs font-black text-slate-900 uppercase leading-none mb-1">{item.name}</div>
-                      <div className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{item.code}</div>
+                      <div className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{item.name}</div>
+                      <div className="text-xs font-mono text-slate-400 uppercase tracking-tighter">{item.code}</div>
                     </div>
                   </div>
                 </td>
@@ -175,38 +175,38 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
                   </div>
                 </td>
                 <td className="px-4 py-4 text-center">
-                   <span className="text-[10px] font-black text-slate-500">{item.unit}</span>
+                  <span className="text-[10px] font-black text-slate-500">{item.unit}</span>
                 </td>
                 <td className="px-4 py-4">
-                   <div className="flex flex-col gap-1 items-center">
-                      <div className="flex items-center gap-2 text-[9px] font-bold text-emerald-600">
-                         <ArrowUpCircle size={10} /> {formatDate(item.lastEntry)}
-                      </div>
-                      <div className="flex items-center gap-2 text-[9px] font-bold text-red-500">
-                         <ArrowDownCircle size={10} /> {formatDate(item.lastExit)}
-                      </div>
-                   </div>
+                  <div className="flex flex-col gap-1 items-center">
+                    <div className="flex items-center gap-2 text-[9px] font-bold text-emerald-600">
+                      <ArrowUpCircle size={10} /> {formatDate(item.lastEntry)}
+                    </div>
+                    <div className="flex items-center gap-2 text-[9px] font-bold text-red-500">
+                      <ArrowDownCircle size={10} /> {formatDate(item.lastExit)}
+                    </div>
+                  </div>
                 </td>
                 <td className="px-4 py-4 text-center">
-                   <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-black text-slate-600">{formatDate(item.lastCount)}</span>
-                      {item.lastCountQuantity !== undefined && (
-                        <span className="text-[8px] font-bold text-slate-400 uppercase">Visto: {item.lastCountQuantity}</span>
-                      )}
-                   </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] font-black text-slate-600">{formatDate(item.lastCount)}</span>
+                    {item.lastCountQuantity !== undefined && (
+                      <span className="text-[8px] font-bold text-slate-400 uppercase">Visto: {item.lastCountQuantity}</span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-4 text-center">
-                   <button onClick={() => handleStartEdit(item.code, item.minStock)} className="text-xs font-black text-slate-700 hover:text-primary-600 border-b border-dotted border-slate-300">
-                      {item.minStock}
-                   </button>
+                  <button onClick={() => handleStartEdit(item.code, item.minStock)} className="text-xs font-black text-slate-700 hover:text-primary-600 border-b border-dotted border-slate-300">
+                    {item.minStock}
+                  </button>
                 </td>
                 <td className="px-6 py-4 text-right">
-                   <div className="flex flex-col items-end">
-                      <span className={`text-sm font-black ${item.isCritical ? 'text-red-600' : 'text-slate-900'}`}>
-                        {item.balance}
-                      </span>
-                      {item.isCritical && <span className="text-[8px] font-black uppercase text-red-500 tracking-widest animate-pulse">Abaixo do Mínimo</span>}
-                   </div>
+                  <div className="flex flex-col items-end">
+                    <span className={`text-base font-black ${item.isCritical ? 'text-red-600' : 'text-slate-900'}`}>
+                      {item.balance}
+                    </span>
+                    {item.isCritical && <span className="text-[8px] font-black uppercase text-red-500 tracking-widest animate-pulse">Abaixo do Mínimo</span>}
+                  </div>
                 </td>
                 <td className="px-4 py-4 text-center">
                   <button onClick={() => onMove(item.code, item.warehouse, item.address)} className="p-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-500/10 active:scale-95">
@@ -223,48 +223,48 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
           {filteredData.map((item) => (
             <div key={item.key} className={`bg-white border rounded-xl overflow-hidden shadow-sm active:bg-slate-50 transition-colors ${item.isCritical ? 'border-red-100 shadow-red-50' : 'border-slate-200'}`}>
               <div className="p-4 flex items-center justify-between border-b border-slate-50">
-                 <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${item.isCritical ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                       <Package size={18} />
-                    </div>
-                    <div>
-                       <h4 className={`text-xs font-black uppercase leading-none mb-1 ${item.isCritical ? 'text-red-700' : 'text-slate-800'}`}>{item.name}</h4>
-                       <span className="text-[10px] font-mono text-slate-400 tracking-tighter uppercase">{item.code}</span>
-                    </div>
-                 </div>
-                 <div className="text-right">
-                    <div className={`text-sm font-black leading-none ${item.isCritical ? 'text-red-600' : 'text-slate-900'}`}>{item.balance} <span className="text-[9px] font-medium">{item.unit}</span></div>
-                    {item.isCritical && <span className="text-[8px] font-black text-red-500 uppercase tracking-tighter animate-pulse">Abaixo do Mínimo</span>}
-                 </div>
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${item.isCritical ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                    <Package size={18} />
+                  </div>
+                  <div>
+                    <h4 className={`text-xs font-black uppercase leading-none mb-1 ${item.isCritical ? 'text-red-700' : 'text-slate-800'}`}>{item.name}</h4>
+                    <span className="text-[10px] font-mono text-slate-400 tracking-tighter uppercase">{item.code}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-sm font-black leading-none ${item.isCritical ? 'text-red-600' : 'text-slate-900'}`}>{item.balance} <span className="text-[9px] font-medium">{item.unit}</span></div>
+                  {item.isCritical && <span className="text-[8px] font-black text-red-500 uppercase tracking-tighter animate-pulse">Abaixo do Mínimo</span>}
+                </div>
               </div>
               <div className={`p-4 flex flex-col gap-3 ${item.isCritical ? 'bg-red-50/20' : 'bg-slate-50/50'}`}>
-                 <div className="grid grid-cols-2 gap-3">
-                    <div>
-                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Local / Endereço</p>
-                       <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] font-black text-slate-800">ARM: {item.warehouse}</span>
-                          <span className="text-[10px] font-bold text-slate-500 italic">{item.address || 'Geral'}</span>
-                       </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Local / Endereço</p>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[10px] font-black text-slate-800">ARM: {item.warehouse}</span>
+                      <span className="text-[10px] font-bold text-slate-500 italic">{item.address || 'Geral'}</span>
                     </div>
-                    <div>
-                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Última Contagem</p>
-                       <span className="text-[10px] font-black text-slate-600">{formatDate(item.lastCount)}</span>
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Última Contagem</p>
+                    <span className="text-[10px] font-black text-slate-600">{formatDate(item.lastCount)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                  <div className="flex gap-3">
+                    <div className="flex flex-col">
+                      <span className="text-[8px] font-black text-slate-400 uppercase">E: {formatDate(item.lastEntry)}</span>
+                      <span className="text-[8px] font-black text-slate-400 uppercase">S: {formatDate(item.lastExit)}</span>
                     </div>
-                 </div>
-                 <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                    <div className="flex gap-3">
-                       <div className="flex flex-col">
-                          <span className="text-[8px] font-black text-slate-400 uppercase">E: {formatDate(item.lastEntry)}</span>
-                          <span className="text-[8px] font-black text-slate-400 uppercase">S: {formatDate(item.lastExit)}</span>
-                       </div>
-                    </div>
-                    <button 
-                      onClick={() => onMove(item.code, item.warehouse, item.address)}
-                      className="bg-primary-600 text-white px-4 py-2 rounded-lg font-black text-[9px] uppercase tracking-widest shadow-md flex items-center gap-2"
-                    >
-                      <MoveHorizontal size={12} /> Movimentar
-                    </button>
-                 </div>
+                  </div>
+                  <button
+                    onClick={() => onMove(item.code, item.warehouse, item.address)}
+                    className="bg-primary-600 text-white px-4 py-2 rounded-lg font-black text-[9px] uppercase tracking-widest shadow-md flex items-center gap-2"
+                  >
+                    <MoveHorizontal size={12} /> Movimentar
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -272,8 +272,8 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ transactions, onMove
 
         {filteredData.length === 0 && (
           <div className="p-20 text-center text-slate-400">
-             <PackageSearch size={48} className="mx-auto mb-4 opacity-10" />
-             <p className="text-sm font-black uppercase tracking-widest italic">Estoque não encontrado.</p>
+            <PackageSearch size={48} className="mx-auto mb-4 opacity-10" />
+            <p className="text-sm font-black uppercase tracking-widest italic">Estoque não encontrado.</p>
           </div>
         )}
       </div>
