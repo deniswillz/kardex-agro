@@ -5,6 +5,7 @@ import { InventorySession, User } from '../types';
 import { loadInventorySessions, saveInventorySessions } from '../services/storage';
 import { importInventoryFromExcel } from '../services/excel';
 import { InventorySessionExecution } from './InventorySessionExecution';
+import { ConfirmationModal } from './ConfirmationModal';
 
 interface InventoryModuleProps {
   currentUser?: User;
@@ -18,6 +19,8 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
   const [searchTerm, setSearchTerm] = useState('');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>(30);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
   // Carregamento inicial do localStorage
   useEffect(() => {
@@ -44,7 +47,7 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
         status: 'ABERTO',
         items
       };
-      
+
       setSessions(prev => [newSession, ...prev]);
       setActiveSessionId(newSession.id);
     } catch (err) {
@@ -54,8 +57,14 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
   };
 
   const handleDeleteSession = (id: string) => {
-    if (window.confirm("Deseja realmente excluir esta sessão de inventário?")) {
-      setSessions(prev => prev.filter(s => s.id !== id));
+    setSessionToDelete(id);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDeleteSession = () => {
+    if (sessionToDelete) {
+      setSessions(prev => prev.filter(s => s.id !== sessionToDelete));
+      setSessionToDelete(null);
     }
   };
 
@@ -66,8 +75,8 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
   const filteredSessions = sessions.filter(s => {
     const cutoff = Date.now() - (timeFilter * 24 * 60 * 60 * 1000);
     const matchesDate = s.createdAt >= cutoff;
-    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         s.responsible.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.responsible.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesDate && matchesSearch;
   });
 
@@ -75,8 +84,8 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
 
   if (activeSessionId && activeSession) {
     return (
-      <InventorySessionExecution 
-        session={activeSession} 
+      <InventorySessionExecution
+        session={activeSession}
         onBack={() => setActiveSessionId(null)}
         onSave={handleSaveSession}
       />
@@ -88,27 +97,27 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="bg-primary-50 text-primary-600 p-3 rounded-xl">
-             <ClipboardList size={24} />
+            <ClipboardList size={24} />
           </div>
           <div className="relative flex-1 min-w-[200px] md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Pesquisar sessões..." 
+            <input
+              type="text"
+              placeholder="Pesquisar sessões..."
               className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm w-full outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
             {[7, 15, 30, 90].map((v) => (
               <button key={v} onClick={() => setTimeFilter(v as TimeFilter)} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${timeFilter === v ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{v}D</button>
             ))}
           </div>
-          <button 
+          <button
             onClick={() => fileInputRef.current?.click()}
             className="flex-1 md:flex-none bg-primary-600 text-white px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary-500/20 hover:bg-primary-700 active:scale-95 transition-all"
           >
@@ -159,21 +168,20 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${
-                    session.status === 'ABERTO' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-800 text-white border-slate-900'
-                  }`}>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${session.status === 'ABERTO' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-800 text-white border-slate-900'
+                    }`}>
                     {session.status === 'ABERTO' ? 'Em Aberto' : 'Finalizado'}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button 
+                    <button
                       onClick={() => setActiveSessionId(session.id)}
                       className="p-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-md shadow-primary-500/10"
                     >
                       <ArrowRight size={18} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDeleteSession(session.id)}
                       className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                     >
@@ -193,9 +201,8 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
           <div key={session.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm active:bg-slate-50 transition-all">
             <div className="p-4 flex items-center justify-between border-b border-slate-50">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
-                  session.status === 'ABERTO' ? 'bg-primary-50 text-primary-600 border-primary-100' : 'bg-slate-800 text-white border-slate-900'
-                }`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${session.status === 'ABERTO' ? 'bg-primary-50 text-primary-600 border-primary-100' : 'bg-slate-800 text-white border-slate-900'
+                  }`}>
                   <ClipboardList size={20} />
                 </div>
                 <div>
@@ -203,9 +210,8 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{session.items.length} ITENS</span>
                 </div>
               </div>
-              <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full border ${
-                 session.status === 'ABERTO' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-800 text-white border-slate-900'
-              }`}>
+              <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full border ${session.status === 'ABERTO' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-800 text-white border-slate-900'
+                }`}>
                 {session.status === 'ABERTO' ? 'ABERTO' : 'FECHADO'}
               </span>
             </div>
@@ -227,13 +233,13 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
                 </div>
               </div>
               <div className="flex gap-2 pt-2 border-t border-slate-100">
-                <button 
+                <button
                   onClick={() => setActiveSessionId(session.id)}
                   className="flex-1 bg-primary-600 text-white py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-md flex items-center justify-center gap-2"
                 >
                   <ArrowRight size={14} /> Acessar Auditoria
                 </button>
-                <button 
+                <button
                   onClick={() => handleDeleteSession(session.id)}
                   className="w-12 h-10 bg-white border border-slate-200 text-red-500 rounded-xl flex items-center justify-center"
                 >
@@ -247,10 +253,25 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
 
       {filteredSessions.length === 0 && (
         <div className="p-20 text-center text-slate-400">
-           <AlertCircle size={48} className="mx-auto mb-4 opacity-10" />
-           <p className="text-sm font-black uppercase tracking-widest italic">Nenhuma sessão ativa.</p>
+          <AlertCircle size={48} className="mx-auto mb-4 opacity-10" />
+          <p className="text-sm font-black uppercase tracking-widest italic">Nenhuma sessão ativa.</p>
         </div>
       )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setSessionToDelete(null);
+        }}
+        onConfirm={confirmDeleteSession}
+        title="Excluir Inventário"
+        message="Deseja realmente excluir esta sessão de inventário? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 };
