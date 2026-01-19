@@ -319,7 +319,7 @@ const App: React.FC = () => {
             {/* TOP HEADER - Verde Escuro */}
             <header className="fixed top-0 left-0 right-0 h-14 bg-primary-600 z-50 flex items-center justify-between px-4 lg:px-6 shadow-md">
                 <div className="flex items-center gap-2 lg:gap-3">
-                    <img src="/logo.png" alt="Nano Pro" className="h-10 w-auto" />
+                    <img src="/logo.png" alt="Nano Pro" className="h-10 lg:h-12 w-auto" />
                 </div>
                 <div className="flex items-center gap-2 lg:gap-4">
                     <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest hidden sm:block">USUÁRIO NANO</span>
@@ -335,9 +335,9 @@ const App: React.FC = () => {
 
             {/* SIDEBAR - Branca */}
             <aside className="hidden lg:flex flex-col w-56 bg-white border-r border-slate-200 fixed top-14 h-[calc(100vh-56px)] z-30">
-                <div className="p-4 border-b border-slate-100 flex flex-col items-center">
-                    <img src="/logo.png" alt="Nano Pro" className="h-16 w-auto mb-2" />
-                    <p className="text-[9px] font-bold text-primary-600 uppercase tracking-widest">Gestão de Estoque</p>
+                <div className="p-5 border-b border-slate-100 text-center">
+                    <h2 className="text-xl font-black text-primary-600 uppercase tracking-wide">Gestão de Estoque</h2>
+                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mt-1">Nano Pro</p>
                 </div>
 
                 <nav className="flex-1 p-3 space-y-1">
