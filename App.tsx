@@ -258,56 +258,59 @@ const App: React.FC = () => {
     if (!currentUser) {
         return (
             <div className="min-h-screen bg-primary-600 flex flex-col items-center justify-center p-4">
-                {/* Logo e Título */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center mb-6">
-                        <img src="/logo.png" alt="Nano Pro" className="h-32 w-auto" />
+                {/* Container centralizado */}
+                <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md">
+                    {/* Logo e Título */}
+                    <div className="text-center mb-6">
+                        <div className="inline-flex items-center justify-center mb-6">
+                            <img src="/logo.png" alt="Nano Pro" className="h-32 w-auto" />
+                        </div>
+                        <p className="text-white/80 text-[10px] sm:text-xs font-semibold tracking-[0.3em] uppercase">Logística Industrial Inteligente</p>
                     </div>
-                    <p className="text-white/70 text-xs font-medium uppercase tracking-[0.3em] mt-2">Logística Industrial Inteligente</p>
+
+                    {/* Card de Login */}
+                    <form onSubmit={handleLogin} className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 space-y-5">
+                        <div>
+                            <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                                <User size={12} /> Login
+                            </label>
+                            <input
+                                type="text"
+                                value={loginForm.name}
+                                onChange={(e) => setLoginForm({ ...loginForm, name: e.target.value })}
+                                className="w-full bg-slate-100 border-0 rounded-lg p-4 text-sm font-medium outline-none focus:ring-2 focus:ring-[#006B47]"
+                                placeholder="Seu login"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                                <Lock size={12} /> Senha
+                            </label>
+                            <input
+                                type="password"
+                                value={loginForm.password}
+                                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                                className="w-full bg-slate-100 border-0 rounded-lg p-4 text-sm font-medium outline-none focus:ring-2 focus:ring-[#006B47]"
+                                placeholder="••••••••"
+                                required
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            className="w-full bg-[#006B47] text-white py-4 rounded-lg font-black text-sm uppercase tracking-widest hover:bg-[#005538] transition-all active:scale-[0.98] disabled:opacity-70"
+                        >
+                            Entrar
+                        </button>
+                        <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest pt-2">
+                            <button type="button" className="hover:text-[#006B47] transition-all">Modo Consulta (Visitante)</button>
+                        </p>
+                    </form>
                 </div>
 
-                {/* Card de Login */}
-                <form onSubmit={handleLogin} className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 space-y-5">
-                    <div>
-                        <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                            <User size={12} /> Login
-                        </label>
-                        <input
-                            type="text"
-                            value={loginForm.name}
-                            onChange={(e) => setLoginForm({ ...loginForm, name: e.target.value })}
-                            className="w-full bg-slate-100 border-0 rounded-lg p-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary-500"
-                            placeholder="Seu login"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                            <Lock size={12} /> Senha
-                        </label>
-                        <input
-                            type="password"
-                            value={loginForm.password}
-                            onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                            className="w-full bg-slate-100 border-0 rounded-lg p-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary-500"
-                            placeholder="••••••••"
-                            required
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="w-full bg-primary-600 text-white py-4 rounded-lg font-black text-sm uppercase tracking-widest hover:bg-primary-700 transition-all active:scale-[0.98]"
-                    >
-                        Entrar
-                    </button>
-                    <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest pt-2">
-                        Modo Consulta (Visitante)
-                    </p>
-                </form>
-
                 {/* Footer */}
-                <p className="text-white/50 text-[10px] font-medium uppercase tracking-widest mt-12 text-center">
-                    NANO PRO © 2026 - Gestão Industrial de Alta Performance
+                <p className="text-white/60 text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.2em] mt-12 text-center">
+                    Nano Pro © 2026 - Gestão Industrial de Alta Performance
                 </p>
             </div>
         );
@@ -319,7 +322,7 @@ const App: React.FC = () => {
             {/* TOP HEADER - Verde Escuro */}
             <header className="fixed top-0 left-0 right-0 h-14 bg-primary-600 z-50 flex items-center justify-between px-4 lg:px-6 shadow-md">
                 <div className="flex items-center gap-2 lg:gap-3">
-                    <img src="/logo.png" alt="Nano Pro" className="h-10 lg:h-12 w-auto" />
+                    <img src="/logo.png" alt="Nano Pro" className="h-10 lg:h-12 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
                 </div>
                 <div className="flex items-center gap-2 lg:gap-4">
                     <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest hidden sm:block">USUÁRIO NANO</span>
