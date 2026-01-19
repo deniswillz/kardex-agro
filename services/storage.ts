@@ -371,6 +371,90 @@ export const scheduleAutoBackup = (): void => {
 
 // ============ ADMINISTRATIVE ============
 
+export const getBackups = async (): Promise<any[]> => {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('backups')
+      .select('id, created_at, type')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Load backups error:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error('Load backups failed:', err);
+    return [];
+  }
+};
+
+export const createManualBackup = async (): Promise<boolean> => {
+  if (!isSupabaseConfigured()) return false;
+
+  try {
+    const transactions = await loadTransactions();
+    const users = await loadUsers();
+    const inventorySessions = await loadInventorySessions();
+
+    const backupData = {
+      id: crypto.randomUUID(),
+      created_at: Date.now(),
+      transactions,
+      users,
+      inventory_sessions: inventorySessions,
+      type: 'MANUAL'
+    };
+
+    const { error } = await supabase
+      .from('backups')
+      .insert(backupData);
+
+    if (error) {
+      console.error('Manual backup error:', error);
+      return false;
+    }
+
+    console.log('✅ Backup manual criado:', new Date().toLocaleString());
+    return true;
+  } catch (err) {
+    console.error('Manual backup failed:', err);
+    return false;
+  }
+};
+
+export const restoreFromCloud = async (backupId: string): Promise<boolean> => {
+  if (!isSupabaseConfigured()) return false;
+
+  try {
+    const { data, error } = await supabase
+      .from('backups')
+      .select('*')
+      .eq('id', backupId)
+      .single();
+
+    if (error || !data) {
+      console.error('Fetch backup for restore error:', error);
+      return false;
+    }
+
+    if (data.transactions) {
+      await saveTransactions(data.transactions);
+      if (data.users) await saveUsers(data.users);
+      if (data.inventory_sessions) await saveInventorySessions(data.inventory_sessions);
+      return true;
+    }
+
+    return false;
+  } catch (err) {
+    console.error('Restore from cloud failed:', err);
+    return false;
+  }
+};
+
 export const wipeTransactions = async (): Promise<void> => {
   if (!isSupabaseConfigured()) return;
 
@@ -388,7 +472,7 @@ export const wipeTransactions = async (): Promise<void> => {
   }
 };
 
-export const restoreBackup = async (jsonData: string): Promise<boolean> => {
+export const importBackupFromFile = async (jsonData: string): Promise<boolean> => {
   try {
     const data = JSON.parse(jsonData);
 
@@ -413,7 +497,7 @@ export const restoreBackup = async (jsonData: string): Promise<boolean> => {
   }
 };
 
-export const exportToJson = async (): Promise<void> => {
+export const exportBackupToFile = async (): Promise<void> => {
   const transactions = await loadTransactions();
   const users = await loadUsers();
   const inventorySessions = await loadInventorySessions();

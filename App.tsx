@@ -6,7 +6,8 @@ import {
 import { Transaction, User as UserType } from './types';
 import {
     loadTransactions, saveTransaction, saveTransactions, deleteTransaction, loadUsers, saveUsers,
-    wipeTransactions, restoreBackup, exportToJson, scheduleAutoBackup, subscribeToTransactions
+    wipeTransactions, importBackupFromFile, exportBackupToFile, scheduleAutoBackup, subscribeToTransactions,
+    createManualBackup, getBackups, restoreFromCloud
 } from './services/storage';
 import { importFromExcel, exportToExcel, downloadTemplate } from './services/excel';
 import { useStockCalculation } from './hooks/useStockCalculation';
@@ -214,8 +215,8 @@ const App: React.FC = () => {
         setTransactions([]);
     };
 
-    const handleRestoreData = async (json: string) => {
-        const success = await restoreBackup(json);
+    const handleImportBackup = async (json: string) => {
+        const success = await importBackupFromFile(json);
         if (success) {
             const restored = await loadTransactions();
             setTransactions(restored);
@@ -225,8 +226,28 @@ const App: React.FC = () => {
         }
     };
 
-    const handleBackup = async () => {
-        await exportToJson();
+    const handleExportBackup = async () => {
+        await exportBackupToFile();
+    };
+
+    const handleManualBackup = async () => {
+        const success = await createManualBackup();
+        if (success) {
+            alert('Backup (Snapshot) criado com sucesso no Supabase!');
+        } else {
+            alert('Erro ao criar backup no Supabase.');
+        }
+    };
+
+    const handleCloudRestore = async (backupId: string) => {
+        const success = await restoreFromCloud(backupId);
+        if (success) {
+            const freshTransactions = await loadTransactions();
+            setTransactions(freshTransactions);
+            alert('Backup restaurado do Cloud com sucesso!');
+        } else {
+            alert('Erro ao restaurar backup do Cloud.');
+        }
     };
 
     const handleExportKardex = () => {
@@ -472,10 +493,13 @@ const App: React.FC = () => {
                         users={users}
                         onSaveUsers={(updated) => { setUsers(updated); saveUsers(updated); }}
                         onWipeData={handleWipeData}
-                        onRestoreData={handleRestoreData}
+                        onImportBackup={handleImportBackup}
                         onImportExcel={handleImportExcel}
                         onExportKardex={handleExportKardex}
-                        onBackup={handleBackup}
+                        onExportBackup={handleExportBackup}
+                        onManualBackup={handleManualBackup}
+                        onCloudRestore={handleCloudRestore}
+                        onFetchBackups={getBackups}
                     />
                 )}
             </main>

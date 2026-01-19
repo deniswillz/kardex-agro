@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   Users, ShieldAlert, Database, Download, Upload, Trash2,
   UserPlus, Shield, ToggleLeft, ToggleRight,
-  AlertTriangle, RefreshCcw, FileSpreadsheet, FileJson, Lock
+  AlertTriangle, RefreshCcw, FileSpreadsheet, FileJson, Lock, Cloud, X
 } from 'lucide-react';
 import { User, UserProfile, Transaction } from '../types';
 
@@ -10,18 +10,24 @@ interface SettingsProps {
   users: User[];
   onSaveUsers: (users: User[]) => void;
   onWipeData: () => void;
-  onRestoreData: (json: string) => void;
+  onImportBackup: (json: string) => void;
   onImportExcel: () => void;
   onExportKardex: () => void;
-  onBackup: () => void;
+  onExportBackup: () => void;
+  onManualBackup: () => void;
+  onCloudRestore: (backupId: string) => void;
+  onFetchBackups: () => Promise<any[]>;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
-  users, onSaveUsers, onWipeData, onRestoreData,
-  onImportExcel, onExportKardex, onBackup
+  users, onSaveUsers, onWipeData, onImportBackup,
+  onImportExcel, onExportKardex, onExportBackup, onManualBackup, onCloudRestore, onFetchBackups
 }) => {
   const [activeTab, setActiveTab] = useState<'USERS' | 'MAINTENANCE' | 'DATA'>('USERS');
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [cloudBackups, setCloudBackups] = useState<any[]>([]);
+  const [isLoadingBackups, setIsLoadingBackups] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleToggleUser = (userId: string) => {
@@ -56,8 +62,20 @@ export const Settings: React.FC<SettingsProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (ev) => onRestoreData(ev.target?.result as string);
+      reader.onload = (ev) => onImportBackup(ev.target?.result as string);
       reader.readAsText(file);
+    }
+  };
+
+  const loadCloudBackups = async () => {
+    setIsLoadingBackups(true);
+    try {
+      const backups = await onFetchBackups();
+      setCloudBackups(backups);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingBackups(false);
     }
   };
 
@@ -173,31 +191,68 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
             </div>
 
-            {/* Backup Manual e Restaurar */}
+            {/* Local Backup/Import */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-6 border border-dashed border-slate-200 rounded-2xl bg-white flex items-center justify-between">
+              <div className="p-6 border border-slate-200 rounded-2xl bg-white flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary-50 rounded-xl text-primary-600"><FileJson size={24} /></div>
+                  <div className="p-3 bg-slate-50 rounded-xl text-slate-600"><FileJson size={24} /></div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-800">Backup Manual</h4>
-                    <p className="text-[10px] text-slate-400 uppercase font-black">Snapshot completo do sistema</p>
+                    <h4 className="text-sm font-bold text-slate-800">Exportar Backup</h4>
+                    <p className="text-[10px] text-slate-400 uppercase font-black">Snapshot completo (.JSON)</p>
                   </div>
                 </div>
-                <button onClick={onBackup} className="flex items-center gap-2 text-white font-black text-[10px] uppercase bg-primary-600 px-4 py-2 rounded-lg hover:bg-primary-700 transition-all shadow-md">
-                  <Download size={14} /> Gerar
+                <button onClick={onExportBackup} className="flex items-center gap-2 text-slate-700 font-black text-[10px] uppercase bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 transition-all">
+                  <Download size={14} /> Exportar
                 </button>
               </div>
 
-              <div className="p-6 border border-dashed border-slate-200 rounded-2xl bg-white flex items-center justify-between">
+              <div className="p-6 border border-slate-200 rounded-2xl bg-white flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-amber-50 rounded-xl text-amber-600"><Upload size={24} /></div>
+                  <div className="p-3 bg-slate-50 rounded-xl text-slate-600"><Upload size={24} /></div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-800">Restaurar Backup</h4>
+                    <h4 className="text-sm font-bold text-slate-800">Importar Backup</h4>
                     <p className="text-[10px] text-slate-400 uppercase font-black">Carregar arquivo JSON</p>
                   </div>
                 </div>
-                <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 text-white font-black text-[10px] uppercase bg-amber-600 px-4 py-2 rounded-lg hover:bg-amber-700 transition-all shadow-md">
-                  <Upload size={14} /> Restaurar
+                <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 text-slate-700 font-black text-[10px] uppercase bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 transition-all">
+                  <Upload size={14} /> Importar
+                </button>
+              </div>
+            </div>
+
+            {/* Cloud Backup (Supabase) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-6 border border-primary-100 rounded-2xl bg-primary-50/30 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary-100 rounded-xl text-primary-600"><Database size={24} /></div>
+                  <div>
+                    <h4 className="text-sm font-bold text-primary-800">Backup Manual</h4>
+                    <p className="text-[10px] text-primary-600/70 uppercase font-black">Salvar Snapshot na Nuvem</p>
+                  </div>
+                </div>
+                <button onClick={onManualBackup} className="flex items-center gap-2 text-white font-black text-[10px] uppercase bg-primary-600 px-4 py-2 rounded-lg hover:bg-primary-700 transition-all shadow-md">
+                  <RefreshCcw size={14} /> Fazer Backup
+                </button>
+              </div>
+
+              <div className="p-6 border border-amber-100 rounded-2xl bg-amber-50/30 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-amber-100 rounded-xl text-amber-600"><Cloud size={24} /></div>
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-800">Restaurar Backup</h4>
+                    <p className="text-[10px] text-amber-600/70 uppercase font-black">Restaurar da Supabase</p>
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    setIsLoadingBackups(true);
+                    // Aqui seria ideal buscar a lista, mas vamos simplificar usando um prompt ou puxando do App
+                    // Vou adicionar uma prop onFetchBackups
+                    setShowRestoreModal(true);
+                  }}
+                  className="flex items-center gap-2 text-white font-black text-[10px] uppercase bg-amber-600 px-4 py-2 rounded-lg hover:bg-amber-700 transition-all shadow-md"
+                >
+                  <RefreshCcw size={14} /> Listar Backups
                 </button>
               </div>
             </div>
@@ -286,6 +341,64 @@ export const Settings: React.FC<SettingsProps> = ({
               <button type="submit" className="flex-[2] py-3 bg-primary-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary-500/20">Salvar Alterações</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Restore from Cloud Modal */}
+      {showRestoreModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[80vh]">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Cloud size={20} /></div>
+                <h3 className="font-black text-slate-800 uppercase tracking-tight">Restaurar da Nuvem</h3>
+              </div>
+              <button onClick={() => setShowRestoreModal(false)} className="p-2 text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              <p className="text-xs text-slate-500 mb-6 italic">Selecione um ponto de restauração (Snapshot) salvo no Supabase.</p>
+
+              {isLoadingBackups ? (
+                <div className="flex flex-col items-center py-12 gap-4">
+                  <RefreshCcw size={32} className="text-primary-500 animate-spin" />
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Buscando Backups...</p>
+                </div>
+              ) : cloudBackups.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-sm font-bold text-slate-400">Nenhum backup encontrado na nuvem.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {cloudBackups.map(b => (
+                    <div key={b.id} className="p-4 border border-slate-100 rounded-xl flex items-center justify-between hover:bg-slate-50 transition-all group">
+                      <div>
+                        <p className="text-sm font-bold text-slate-800">{new Date(b.created_at).toLocaleString()}</p>
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{b.type || 'AUTO'}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (confirm('Deseja restaurar este backup? Os dados atuais serão substituídos.')) {
+                            onCloudRestore(b.id);
+                            setShowRestoreModal(false);
+                          }
+                        }}
+                        className="px-4 py-2 bg-amber-100 text-amber-700 font-black text-[10px] uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-amber-600 hover:text-white"
+                      >
+                        Restaurar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-slate-100">
+              <button onClick={loadCloudBackups} className="w-full py-3 border border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-white transition-all">
+                Atualizar Lista
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
