@@ -335,9 +335,12 @@ const App: React.FC = () => {
 
             {/* SIDEBAR - Branca */}
             <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-slate-200 fixed top-14 h-[calc(100vh-56px)] z-30">
-                {/* Header com KARDEX */}
-                <div className="px-6 pt-6 pb-5">
-                    <h2 className="text-xl font-black text-primary-600 uppercase tracking-[0.2em] text-center">KARDEX</h2>
+                {/* Header com KARDEX em Card */}
+                <div className="px-4 pt-5 pb-4">
+                    <div className="bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl p-4 shadow-lg shadow-primary-600/20">
+                        <h2 className="text-xl font-black text-white uppercase tracking-[0.15em] text-center">KARDEX</h2>
+                        <p className="text-[9px] font-medium text-white/70 uppercase tracking-widest text-center mt-1">Gestão de Estoque</p>
+                    </div>
                 </div>
 
                 {/* Menu de navegação */}
