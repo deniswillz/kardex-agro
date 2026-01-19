@@ -295,8 +295,6 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
             </div>
 
-            {/* Hidden file input for restore - used by Central de Dados */}
-            <input type="file" ref={fileInputRef} onChange={handleFileRestore} accept=".json" className="hidden" />
           </div>
         )}
       </div>
@@ -403,6 +401,8 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         )
       }
+      {/* Hidden file input for restore - used by Central de Dados */}
+      <input type="file" ref={fileInputRef} onChange={handleFileRestore} accept=".json" className="hidden" />
     </div >
   );
 };
