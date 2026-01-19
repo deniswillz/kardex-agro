@@ -377,7 +377,7 @@ export const getBackups = async (): Promise<any[]> => {
   try {
     const { data, error } = await supabase
       .from('backups')
-      .select('id, created_at, type')
+      .select('id, created_at')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -405,8 +405,7 @@ export const createManualBackup = async (): Promise<boolean> => {
       created_at: Date.now(),
       transactions,
       users,
-      inventory_sessions: inventorySessions,
-      type: 'MANUAL'
+      inventory_sessions: inventorySessions
     };
 
     const { error } = await supabase

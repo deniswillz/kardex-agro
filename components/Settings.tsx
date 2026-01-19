@@ -245,10 +245,8 @@ export const Settings: React.FC<SettingsProps> = ({
                 </div>
                 <button
                   onClick={async () => {
-                    setIsLoadingBackups(true);
-                    // Aqui seria ideal buscar a lista, mas vamos simplificar usando um prompt ou puxando do App
-                    // Vou adicionar uma prop onFetchBackups
                     setShowRestoreModal(true);
+                    await loadCloudBackups();
                   }}
                   className="flex items-center gap-2 text-white font-black text-[10px] uppercase bg-amber-600 px-4 py-2 rounded-lg hover:bg-amber-700 transition-all shadow-md"
                 >
@@ -304,103 +302,107 @@ export const Settings: React.FC<SettingsProps> = ({
       </div>
 
       {/* User Edit Modal */}
-      {editingUser && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveUser} className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
-            <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-              <div className="p-2 bg-primary-50 text-primary-600 rounded-lg"><Users size={20} /></div>
-              <h3 className="font-black text-slate-800 uppercase tracking-tight">{editingUser.id ? 'Editar Usuário' : 'Novo Usuário'}</h3>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nome Completo</label>
-                <input name="name" defaultValue={editingUser.name} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-primary-500" placeholder="Ex: João Silva" />
+      {
+        editingUser && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <form onSubmit={handleSaveUser} className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
+              <div className="p-6 border-b border-slate-100 flex items-center gap-3">
+                <div className="p-2 bg-primary-50 text-primary-600 rounded-lg"><Users size={20} /></div>
+                <h3 className="font-black text-slate-800 uppercase tracking-tight">{editingUser.id ? 'Editar Usuário' : 'Novo Usuário'}</h3>
               </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Login (para autenticação)</label>
-                <input name="login" defaultValue={editingUser.login || editingUser.name} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-primary-500" placeholder="Ex: joao.silva" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Senha de Acesso</label>
-                <div className="relative">
-                  <input name="password" type="password" defaultValue={editingUser.password} placeholder="••••••••" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold outline-none focus:border-primary-500" />
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nome Completo</label>
+                  <input name="name" defaultValue={editingUser.name} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-primary-500" placeholder="Ex: João Silva" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Login (para autenticação)</label>
+                  <input name="login" defaultValue={editingUser.login || editingUser.name} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-primary-500" placeholder="Ex: joao.silva" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Senha de Acesso</label>
+                  <div className="relative">
+                    <input name="password" type="password" defaultValue={editingUser.password} placeholder="••••••••" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold outline-none focus:border-primary-500" />
+                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Perfil de Acesso</label>
+                  <select name="profile" defaultValue={editingUser.profile} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-black outline-none focus:border-primary-500">
+                    <option value="ADMIN">ADMIN (Controle Total)</option>
+                    <option value="OPERADOR">OPERADOR (Entradas/Saídas)</option>
+                    <option value="AUDITOR">AUDITOR (Apenas Consulta)</option>
+                  </select>
                 </div>
               </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Perfil de Acesso</label>
-                <select name="profile" defaultValue={editingUser.profile} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-black outline-none focus:border-primary-500">
-                  <option value="ADMIN">ADMIN (Controle Total)</option>
-                  <option value="OPERADOR">OPERADOR (Entradas/Saídas)</option>
-                  <option value="AUDITOR">AUDITOR (Apenas Consulta)</option>
-                </select>
+              <div className="p-6 bg-slate-50 flex gap-3">
+                <button type="button" onClick={() => setEditingUser(null)} className="flex-1 py-3 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 rounded-xl transition-all">Cancelar</button>
+                <button type="submit" className="flex-[2] py-3 bg-primary-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary-500/20">Salvar Alterações</button>
               </div>
-            </div>
-            <div className="p-6 bg-slate-50 flex gap-3">
-              <button type="button" onClick={() => setEditingUser(null)} className="flex-1 py-3 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 rounded-xl transition-all">Cancelar</button>
-              <button type="submit" className="flex-[2] py-3 bg-primary-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary-500/20">Salvar Alterações</button>
-            </div>
-          </form>
-        </div>
-      )}
+            </form>
+          </div>
+        )
+      }
 
       {/* Restore from Cloud Modal */}
-      {showRestoreModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[80vh]">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Cloud size={20} /></div>
-                <h3 className="font-black text-slate-800 uppercase tracking-tight">Restaurar da Nuvem</h3>
+      {
+        showRestoreModal && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[80vh]">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Cloud size={20} /></div>
+                  <h3 className="font-black text-slate-800 uppercase tracking-tight">Restaurar da Nuvem</h3>
+                </div>
+                <button onClick={() => setShowRestoreModal(false)} className="p-2 text-slate-400 hover:text-slate-600"><X size={20} /></button>
               </div>
-              <button onClick={() => setShowRestoreModal(false)} className="p-2 text-slate-400 hover:text-slate-600"><X size={20} /></button>
-            </div>
 
-            <div className="p-6 overflow-y-auto flex-1">
-              <p className="text-xs text-slate-500 mb-6 italic">Selecione um ponto de restauração (Snapshot) salvo no Supabase.</p>
+              <div className="p-6 overflow-y-auto flex-1">
+                <p className="text-xs text-slate-500 mb-6 italic">Selecione um ponto de restauração (Snapshot) salvo no Supabase.</p>
 
-              {isLoadingBackups ? (
-                <div className="flex flex-col items-center py-12 gap-4">
-                  <RefreshCcw size={32} className="text-primary-500 animate-spin" />
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Buscando Backups...</p>
-                </div>
-              ) : cloudBackups.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-sm font-bold text-slate-400">Nenhum backup encontrado na nuvem.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {cloudBackups.map(b => (
-                    <div key={b.id} className="p-4 border border-slate-100 rounded-xl flex items-center justify-between hover:bg-slate-50 transition-all group">
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">{new Date(b.created_at).toLocaleString()}</p>
-                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{b.type || 'AUTO'}</p>
+                {isLoadingBackups ? (
+                  <div className="flex flex-col items-center py-12 gap-4">
+                    <RefreshCcw size={32} className="text-primary-500 animate-spin" />
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Buscando Backups...</p>
+                  </div>
+                ) : cloudBackups.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-sm font-bold text-slate-400">Nenhum backup encontrado na nuvem.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {cloudBackups.map(b => (
+                      <div key={b.id} className="p-4 border border-slate-100 rounded-xl flex items-center justify-between hover:bg-slate-50 transition-all group">
+                        <div>
+                          <p className="text-sm font-bold text-slate-800">{new Date(b.created_at).toLocaleString()}</p>
+                          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Snapshot do Sistema</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (confirm('Deseja restaurar este backup? Os dados atuais serão substituídos.')) {
+                              onCloudRestore(b.id);
+                              setShowRestoreModal(false);
+                            }
+                          }}
+                          className="px-4 py-2 bg-amber-100 text-amber-700 font-black text-[10px] uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-amber-600 hover:text-white"
+                        >
+                          Restaurar
+                        </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          if (confirm('Deseja restaurar este backup? Os dados atuais serão substituídos.')) {
-                            onCloudRestore(b.id);
-                            setShowRestoreModal(false);
-                          }
-                        }}
-                        className="px-4 py-2 bg-amber-100 text-amber-700 font-black text-[10px] uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-amber-600 hover:text-white"
-                      >
-                        Restaurar
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            <div className="p-6 bg-slate-50 border-t border-slate-100">
-              <button onClick={loadCloudBackups} className="w-full py-3 border border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-white transition-all">
-                Atualizar Lista
-              </button>
+              <div className="p-6 bg-slate-50 border-t border-slate-100">
+                <button onClick={loadCloudBackups} className="w-full py-3 border border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-white transition-all">
+                  Atualizar Lista
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
