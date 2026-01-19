@@ -244,10 +244,10 @@ const App: React.FC = () => {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4 shadow-lg shadow-primary-500/30 animate-pulse">
-                        <Package size={32} className="text-white" />
+                    <div className="inline-flex items-center justify-center mb-4 animate-pulse">
+                        <img src="/logo.png" alt="Nano Pro" className="h-20 w-auto" />
                     </div>
-                    <h1 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Nano Kardex</h1>
+                    <h1 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Nano Pro</h1>
                     <p className="text-slate-400 text-sm">Carregando dados...</p>
                 </div>
             </div>
@@ -260,10 +260,9 @@ const App: React.FC = () => {
             <div className="min-h-screen bg-primary-600 flex flex-col items-center justify-center p-4">
                 {/* Logo e Título */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl mb-6 shadow-lg">
-                        <span className="text-3xl font-black text-primary-600 italic">N</span>
+                    <div className="inline-flex items-center justify-center mb-6">
+                        <img src="/logo.png" alt="Nano Pro" className="h-24 w-auto" />
                     </div>
-                    <h1 className="text-4xl font-black text-white uppercase tracking-tight italic">NANO PRO</h1>
                     <p className="text-white/70 text-xs font-medium uppercase tracking-[0.3em] mt-2">Logística Industrial Inteligente</p>
                 </div>
 
@@ -320,10 +319,7 @@ const App: React.FC = () => {
             {/* TOP HEADER - Verde Escuro */}
             <header className="fixed top-0 left-0 right-0 h-14 bg-primary-600 z-50 flex items-center justify-between px-4 lg:px-6 shadow-md">
                 <div className="flex items-center gap-2 lg:gap-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center font-black text-primary-600 text-sm">
-                        N
-                    </div>
-                    <span className="font-black text-white text-lg tracking-tight uppercase">NANO</span>
+                    <img src="/logo.png" alt="Nano Pro" className="h-8 w-auto" />
                 </div>
                 <div className="flex items-center gap-2 lg:gap-4">
                     <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest hidden sm:block">USUÁRIO NANO</span>
@@ -339,9 +335,9 @@ const App: React.FC = () => {
 
             {/* SIDEBAR - Branca */}
             <aside className="hidden lg:flex flex-col w-56 bg-white border-r border-slate-200 fixed top-14 h-[calc(100vh-56px)] z-30">
-                <div className="p-4 border-b border-slate-100">
-                    <p className="text-[9px] font-bold text-primary-600 uppercase tracking-widest">Plataforma</p>
-                    <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">NANO PRO</h2>
+                <div className="p-4 border-b border-slate-100 flex flex-col items-center">
+                    <img src="/logo.png" alt="Nano Pro" className="h-12 w-auto mb-1" />
+                    <p className="text-[9px] font-bold text-primary-600 uppercase tracking-widest">Gestão de Estoque</p>
                 </div>
 
                 <nav className="flex-1 p-3 space-y-1">
