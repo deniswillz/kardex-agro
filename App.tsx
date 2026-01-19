@@ -334,34 +334,39 @@ const App: React.FC = () => {
             </header>
 
             {/* SIDEBAR - Branca */}
-            <aside className="hidden lg:flex flex-col w-56 bg-white border-r border-slate-200 fixed top-14 h-[calc(100vh-56px)] z-30">
-                <div className="p-5 border-b border-slate-100 text-center">
-                    <h2 className="text-xl font-black text-primary-600 uppercase tracking-wide">Gestão de Estoque</h2>
-                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mt-1">Nano Pro</p>
+            <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-slate-200 fixed top-14 h-[calc(100vh-56px)] z-30">
+                {/* Header com PLATAFORMA */}
+                <div className="px-6 pt-6 pb-4">
+                    <p className="text-[11px] font-bold text-primary-600 uppercase tracking-[0.25em] text-center">Plataforma</p>
                 </div>
 
-                <nav className="flex-1 p-3 space-y-1">
-                    <button onClick={() => setView('DASHBOARD')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'DASHBOARD' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
-                        <LayoutDashboard size={18} /> Dashboard
+                {/* Menu de navegação */}
+                <nav className="flex-1 px-4 space-y-2">
+                    <button onClick={() => setView('DASHBOARD')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl font-bold text-sm tracking-wide transition-all ${view === 'DASHBOARD' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                        <Menu size={20} /> DASHBOARD
                     </button>
-                    <button onClick={() => setView('STOCK')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'STOCK' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
-                        <BarChart3 size={18} /> Saldo em Estoque
+                    <button onClick={() => setView('STOCK')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl font-bold text-sm tracking-wide transition-all ${view === 'STOCK' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                        <BarChart3 size={20} /> SALDO EM ESTOQUE
                     </button>
-                    <button onClick={() => setView('HISTORY')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'HISTORY' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
-                        <History size={18} /> Histórico
+                    <button onClick={() => setView('HISTORY')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl font-bold text-sm tracking-wide transition-all ${view === 'HISTORY' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                        <History size={20} /> HISTÓRICO
                     </button>
-                    <button onClick={() => { setEditingTransaction(null); setPrefillData(undefined); setView('NEW'); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'NEW' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
-                        <PlusCircle size={18} /> Novo Lançamento
+                    <button onClick={() => { setEditingTransaction(null); setPrefillData(undefined); setView('NEW'); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl font-bold text-sm tracking-wide transition-all ${view === 'NEW' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                        <PlusCircle size={20} /> NOVO LANÇAMENTO
                     </button>
-                    <button onClick={() => setView('INVENTORY')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'INVENTORY' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
-                        <ClipboardList size={18} /> Inventários
+                    <button onClick={() => setView('INVENTORY')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl font-bold text-sm tracking-wide transition-all ${view === 'INVENTORY' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                        <ClipboardList size={20} /> INVENTÁRIOS
                     </button>
-                    {currentUser?.profile === 'ADMIN' && (
-                        <button onClick={() => setView('SETTINGS')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all ${view === 'SETTINGS' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
-                            <SettingsIcon size={18} /> Configuração
-                        </button>
-                    )}
                 </nav>
+
+                {/* Configuração separada no rodapé */}
+                {currentUser?.profile === 'ADMIN' && (
+                    <div className="px-4 py-4 border-t border-slate-100">
+                        <button onClick={() => setView('SETTINGS')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl font-bold text-sm tracking-wide transition-all ${view === 'SETTINGS' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                            <SettingsIcon size={20} /> CONFIGURAÇÃO
+                        </button>
+                    </div>
+                )}
             </aside>
 
             {/* Mobile Header */}
@@ -408,7 +413,7 @@ const App: React.FC = () => {
             )}
 
             {/* Main Content */}
-            <main className="flex-1 lg:ml-56 mt-14 lg:mt-14 p-4 lg:p-8 pb-24 lg:pb-8 bg-slate-50 min-h-[calc(100vh-56px)]">
+            <main className="flex-1 lg:ml-60 mt-14 lg:mt-14 p-4 lg:p-8 pb-24 lg:pb-8 bg-slate-50 min-h-[calc(100vh-56px)]">
                 {view === 'DASHBOARD' && (
                     <div className="space-y-6">
                         <StatsCards stats={stats} timeFilter={timeFilter} setTimeFilter={setTimeFilter} />
