@@ -245,7 +245,7 @@ const App: React.FC = () => {
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
                 <div className="text-center">
                     <div className="inline-flex items-center justify-center mb-4 animate-pulse">
-                        <img src="/logo.png" alt="Nano Pro" className="h-20 w-auto" />
+                        <img src="/logo.png" alt="Nano Pro" className="h-28 w-auto" />
                     </div>
                     <h1 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Nano Pro</h1>
                     <p className="text-slate-400 text-sm">Carregando dados...</p>
@@ -261,7 +261,7 @@ const App: React.FC = () => {
                 {/* Logo e Título */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center mb-6">
-                        <img src="/logo.png" alt="Nano Pro" className="h-24 w-auto" />
+                        <img src="/logo.png" alt="Nano Pro" className="h-32 w-auto" />
                     </div>
                     <p className="text-white/70 text-xs font-medium uppercase tracking-[0.3em] mt-2">Logística Industrial Inteligente</p>
                 </div>
@@ -319,7 +319,7 @@ const App: React.FC = () => {
             {/* TOP HEADER - Verde Escuro */}
             <header className="fixed top-0 left-0 right-0 h-14 bg-primary-600 z-50 flex items-center justify-between px-4 lg:px-6 shadow-md">
                 <div className="flex items-center gap-2 lg:gap-3">
-                    <img src="/logo.png" alt="Nano Pro" className="h-8 w-auto" />
+                    <img src="/logo.png" alt="Nano Pro" className="h-10 w-auto" />
                 </div>
                 <div className="flex items-center gap-2 lg:gap-4">
                     <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest hidden sm:block">USUÁRIO NANO</span>
@@ -336,7 +336,7 @@ const App: React.FC = () => {
             {/* SIDEBAR - Branca */}
             <aside className="hidden lg:flex flex-col w-56 bg-white border-r border-slate-200 fixed top-14 h-[calc(100vh-56px)] z-30">
                 <div className="p-4 border-b border-slate-100 flex flex-col items-center">
-                    <img src="/logo.png" alt="Nano Pro" className="h-12 w-auto mb-1" />
+                    <img src="/logo.png" alt="Nano Pro" className="h-16 w-auto mb-2" />
                     <p className="text-[9px] font-bold text-primary-600 uppercase tracking-widest">Gestão de Estoque</p>
                 </div>
 
