@@ -1,6 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { NotaFiscal, OrdemProducao, Comentario, User, Backup, AppState } from '../types';
+import { NotaFiscal, Comentario, User, Backup, AppState } from '../types';
 
 const SUPABASE_URL = 'https://sibdtuatfpdjqgrhekoe.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpYmR0dWF0ZnBkanFncmhla29lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMDkxOTIsImV4cCI6MjA4Mzg4NTE5Mn0.jRDGgIhiekr6cGgHg0nb6jNkHamFKTCunOjaii_9Yew';
@@ -27,22 +27,6 @@ export const db = {
     },
     async delete(id: string) {
       const { error } = await supabase.from('notas_fiscais').delete().eq('id', id);
-      if (error) throw new Error(formatSupabaseError(error));
-    }
-  },
-  ordens: {
-    async fetch() {
-      const { data, error } = await supabase.from('ordens_producao').select('*').order('data', { ascending: false });
-      if (error) throw new Error(formatSupabaseError(error));
-      return data as OrdemProducao[];
-    },
-    async save(ordem: Partial<OrdemProducao>) {
-      const { data, error } = await supabase.from('ordens_producao').upsert(ordem).select().single();
-      if (error) throw new Error(formatSupabaseError(error));
-      return data;
-    },
-    async delete(id: string) {
-      const { error } = await supabase.from('ordens_producao').delete().eq('id', id);
       if (error) throw new Error(formatSupabaseError(error));
     }
   },
@@ -102,17 +86,14 @@ export const db = {
     async clearAllData() {
       await Promise.all([
         supabase.from('notas_fiscais').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-        supabase.from('ordens_producao').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
         supabase.from('comentarios').delete().neq('id', '00000000-0000-0000-0000-000000000000')
       ]);
     },
     async restoreFromSnapshot(snapshot: AppState) {
       await this.clearAllData();
       const cleanNotas = (snapshot.notas || []).map(({ id, ...rest }) => rest);
-      const cleanOrdens = (snapshot.ordens || []).map(({ id, ...rest }) => rest);
       const cleanComentarios = (snapshot.comentarios || []).map(({ id, ...rest }) => rest);
       if (cleanNotas.length > 0) await supabase.from('notas_fiscais').insert(cleanNotas);
-      if (cleanOrdens.length > 0) await supabase.from('ordens_producao').insert(cleanOrdens);
       if (cleanComentarios.length > 0) await supabase.from('comentarios').insert(cleanComentarios);
     },
     async createBackup(snapshot: AppState, tipo: 'manual' | 'automatico' = 'manual') {

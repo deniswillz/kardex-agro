@@ -8,7 +8,7 @@ interface ListManagerProps<T> {
   title: string;
   items: T[];
   role: UserRole;
-  type: 'nota' | 'ordem' | 'comentario';
+  type: 'nota' | 'comentario';
   onSave: (item: Partial<T>) => Promise<any>;
   onDelete: (id: string) => Promise<void>;
   onRefresh: () => void;
@@ -31,7 +31,7 @@ export const ListManager = <T extends { id: string, data: string, numero?: strin
   const openNewForm = () => {
     setEditing({
       data: format(new Date(), 'yyyy-MM-dd'),
-      status: type === 'nota' ? 'Pendente' : 'Em Separação'
+      status: type === 'nota' ? 'Pendente' : ''
     } as any);
     setErrorMessage(null);
     setIsFormOpen(true);
@@ -51,19 +51,12 @@ export const ListManager = <T extends { id: string, data: string, numero?: strin
       setErrorMessage("Número da Nota e Fornecedor são obrigatórios.");
       return;
     }
-    if (type === 'ordem' && (!editing.numero || !editing.documento)) {
-      setErrorMessage("Número da Ordem e Documento são obrigatórios.");
-      return;
-    }
 
     // Duplicate Check
     if (!force && !editing.id) {
       const isDuplicate = items.some(item => {
         if (type === 'nota') {
           return item.numero === editing.numero;
-        }
-        if (type === 'ordem') {
-          return item.numero === editing.numero || (editing.documento && item.documento === editing.documento);
         }
         return false;
       });
@@ -109,12 +102,10 @@ export const ListManager = <T extends { id: string, data: string, numero?: strin
 
   const getStatusColor = (status: string | undefined) => {
     switch (status) {
-      case 'Classificada':
-      case 'Concluída': return 'bg-emerald-600 text-white shadow-sm';
+      case 'Classificada': return 'bg-emerald-600 text-white shadow-sm';
       case 'Pendente': return 'bg-red-600 text-white shadow-sm';
       case 'Em Conferência': return 'bg-blue-600 text-white shadow-sm';
       case 'Pré Nota': return 'bg-purple-600 text-white shadow-sm';
-      case 'Em Separação': return 'bg-amber-600 text-white shadow-sm';
       default: return 'bg-gray-600 text-white shadow-sm';
     }
   };
@@ -157,14 +148,14 @@ export const ListManager = <T extends { id: string, data: string, numero?: strin
             <form onSubmit={handleSave} className="flex flex-col h-full">
               <div className="p-10 bg-gray-50 border-b-4 border-gray-200 flex justify-between items-center">
                 <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter italic border-l-[10px] border-emerald-600 pl-6">
-                  {editing?.id ? 'Editar' : 'Nova'} {type === 'ordem' ? 'Ordem de Produção' : (type === 'nota' ? 'Nota Fiscal' : title)}
+                  {editing?.id ? 'Editar' : 'Nova'} {type === 'nota' ? 'Nota Fiscal' : title}
                 </h3>
                 <button type="button" onClick={() => setIsFormOpen(false)} className="p-3 hover:bg-gray-200 rounded-full transition-all text-gray-400">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
 
-              <div className="p-10 overflow-y-auto custom-scrollbar flex-1 space-y-8">
+              <div className="p-10 overflow-y-auto custom-scrollbar flex-1 space-y-8 max-h-[60vh]">
                 {errorMessage && <div className="p-5 bg-red-50 text-red-600 rounded-2xl border-2 border-red-200 font-black text-[10px] uppercase tracking-widest">{errorMessage}</div>}
 
                 {/* FORMULÁRIO: NOTA FISCAL */}
@@ -226,52 +217,6 @@ export const ListManager = <T extends { id: string, data: string, numero?: strin
                   </div>
                 )}
 
-                {/* FORMULÁRIO: ORDEM DE PRODUÇÃO */}
-                {type === 'ordem' && (
-                  <div className="space-y-8">
-                    {/* Linha 1: Data e Documento (Compacto) */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">Data</label>
-                        <input type="date" value={editing?.data || ''} onChange={e => setEditing({ ...editing, data: e.target.value } as any)} className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-300 rounded-2xl outline-none font-bold focus:border-[#005c3e] transition-all" required />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">Documento</label>
-                        <input type="text" placeholder="Referência do Documento" value={editing?.documento || ''} onChange={e => setEditing({ ...editing, documento: e.target.value } as any)} className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-300 rounded-2xl outline-none font-bold focus:border-[#005c3e] transition-all italic shadow-inner" required />
-                      </div>
-                    </div>
-                    {/* Linha 2: Ordem (Full Width) */}
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">Ordem</label>
-                      <input type="text" placeholder="Número da OP (Ordem de Produção)" value={editing?.numero || ''} onChange={e => setEditing({ ...editing, numero: e.target.value } as any)} className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-300 rounded-2xl outline-none font-bold focus:border-[#005c3e] transition-all shadow-inner" required />
-                    </div>
-                    {/* Linha 3: Responsável e Status (Compacto) */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">Responsável</label>
-                        <input type="text" placeholder="Nome do colaborador responsável" value={editing?.conferente || ''} onChange={e => setEditing({ ...editing, conferente: e.target.value } as any)} className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-300 rounded-2xl outline-none font-bold focus:border-[#005c3e] transition-all shadow-inner" required />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">Status</label>
-                        <select value={editing?.status || 'Em Separação'} onChange={e => setEditing({ ...editing, status: e.target.value } as any)} className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-300 rounded-2xl outline-none font-bold focus:border-[#005c3e] transition-all shadow-inner">
-                          <option value="Em Separação">Em Separação</option>
-                          <option value="Concluída">Concluída</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">Tipo</label>
-                        <select value={editing?.tipo || ''} onChange={e => setEditing({ ...editing, tipo: e.target.value } as any)} className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-300 rounded-2xl outline-none font-bold focus:border-[#005c3e] transition-all shadow-inner">
-                          <option value="">Selecione...</option>
-                          <option value="Chicote">Chicote</option>
-                          <option value="Mecânica">Mecânica</option>
-                          <option value="Eletrônica">Eletrônica</option>
-                          <option value="Engenharia">Engenharia</option>
-                          <option value="P&D">P&D</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* CAMPO COMENTÁRIO COMUM */}
                 <div>
@@ -364,11 +309,11 @@ export const ListManager = <T extends { id: string, data: string, numero?: strin
                   <td className="px-10 py-10 font-black text-gray-800 text-sm italic">{format(parseISO(item.data), 'dd/MM/yyyy')}</td>
                   {type !== 'comentario' && (
                     <td className="px-10 py-10">
-                      <p className="text-2xl font-black text-gray-900 tracking-tighter leading-none italic">#{item.numero || item.documento}</p>
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-2 mb-2">
                         <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">{item.conferente || item.fornecedor}</p>
                         {item.tipo && <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[7px] font-bold uppercase tracking-wider border border-gray-200">{item.tipo}</span>}
                       </div>
+                      <p className="text-2xl font-black text-gray-900 tracking-tighter leading-none italic">#{item.numero || item.documento}</p>
                     </td>
                   )}
                   <td className="px-10 py-10">

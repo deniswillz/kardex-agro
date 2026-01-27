@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, UserRole, AppState, NotaFiscal, OrdemProducao, Comentario } from './types';
+import { User, UserRole, AppState, NotaFiscal, Comentario } from './types';
 import { db, supabase } from './services/supabase';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
@@ -12,19 +12,18 @@ import { analyzeDailyLogs } from './services/gemini';
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isGuest, setIsGuest] = useState(false);
-  const [currentSection, setCurrentSection] = useState<'dashboard' | 'notas' | 'ordens' | 'comentarios' | 'admin'>('dashboard');
-  const [data, setData] = useState<AppState>({ notas: [], ordens: [], comentarios: [] });
+  const [currentSection, setCurrentSection] = useState<'dashboard' | 'notas' | 'comentarios' | 'admin'>('dashboard');
+  const [data, setData] = useState<AppState>({ notas: [], comentarios: [] });
   const [loading, setLoading] = useState(true);
   const [analysis, setAnalysis] = useState<string>('');
 
   const refreshData = useCallback(async () => {
     try {
-      const [notas, ordens, comentarios] = await Promise.all([
+      const [notas, comentarios] = await Promise.all([
         db.notas.fetch(),
-        db.ordens.fetch(),
         db.comentarios.fetch()
       ]);
-      setData({ notas, ordens, comentarios });
+      setData({ notas, comentarios });
     } catch (error) {
       console.error("Failed to refresh data:", error);
     } finally {
@@ -63,7 +62,7 @@ const App: React.FC = () => {
     sessionStorage.removeItem('active_user');
   };
 
-  const handleNavigate = (section: 'notas' | 'ordens' | 'comentarios') => {
+  const handleNavigate = (section: 'notas' | 'comentarios') => {
     setCurrentSection(section);
   };
 
@@ -74,18 +73,18 @@ const App: React.FC = () => {
   const role: UserRole = isGuest ? 'guest' : user?.role || 'operador';
 
   return (
-    <Layout 
-      currentSection={currentSection} 
-      onSectionChange={setCurrentSection} 
-      user={user} 
+    <Layout
+      currentSection={currentSection}
+      onSectionChange={setCurrentSection}
+      user={user}
       isGuest={isGuest}
       onLogout={logout}
       data={data}
     >
       {currentSection === 'dashboard' && (
-        <Dashboard 
-          data={data} 
-          analysis={analysis} 
+        <Dashboard
+          data={data}
+          analysis={analysis}
           onRunAnalysis={handleSmartAnalysis}
           onRefresh={refreshData}
           isGuest={isGuest}
@@ -100,17 +99,6 @@ const App: React.FC = () => {
           type="nota"
           onSave={db.notas.save}
           onDelete={db.notas.delete}
-          onRefresh={refreshData}
-        />
-      )}
-      {currentSection === 'ordens' && (
-        <ListManager<OrdemProducao>
-          title="Ordem"
-          items={data.ordens}
-          role={role}
-          type="ordem"
-          onSave={db.ordens.save}
-          onDelete={db.ordens.delete}
           onRefresh={refreshData}
         />
       )}

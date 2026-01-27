@@ -21,17 +21,6 @@ export interface NotaFiscal {
   created_by?: string;
 }
 
-export interface OrdemProducao {
-  id: string;
-  data: string;
-  numero: string;
-  documento: string;
-  conferente: string;
-  status: 'Em Separação' | 'Concluída';
-  tipo: 'Chicote' | 'Mecânica' | 'Eletrônica' | 'Engenharia' | 'P&D' | '';
-  observacao: string;
-  created_by?: string;
-}
 
 export interface Comentario {
   id: string;
@@ -42,7 +31,6 @@ export interface Comentario {
 
 export interface AppState {
   notas: NotaFiscal[];
-  ordens: OrdemProducao[];
   comentarios: Comentario[];
 }
 

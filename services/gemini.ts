@@ -4,12 +4,11 @@ import { AppState } from "../types";
 
 export const analyzeDailyLogs = async (data: AppState) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
+
   const prompt = `
     Analise os seguintes dados do Diário de Bordo da Nano:
     
     Notas Fiscais: ${JSON.stringify(data.notas.slice(0, 20))}
-    Ordens de Produção: ${JSON.stringify(data.ordens.slice(0, 20))}
     Comentários: ${JSON.stringify(data.comentarios.slice(0, 20))}
     
     Forneça um resumo executivo de 3-4 frases em português sobre o estado atual do sistema Nano, 

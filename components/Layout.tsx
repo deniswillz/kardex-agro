@@ -19,11 +19,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentSection, onSect
   const [showNotifications, setShowNotifications] = useState(false);
 
   const criticalNotas = data?.notas.filter(n => ['Pendente', 'Em Conferência', 'Pré Nota'].includes(n.status) && differenceInDays(new Date(), parseISO(n.data)) >= 3) || [];
-  const criticalOrdens = data?.ordens.filter(o => o.status === 'Em Separação' && differenceInDays(new Date(), parseISO(o.data)) >= 3) || [];
 
   const criticalItems = [
     ...criticalNotas.map(n => ({ id: n.id, numero: n.numero, tipo: 'Nota Fiscal', status: n.status, d: n.data, section: 'notas' as const })),
-    ...criticalOrdens.map(o => ({ id: o.id, numero: o.numero, tipo: 'Ordem', status: o.status, d: o.data, section: 'ordens' as const }))
   ];
 
   const criticalCount = criticalItems.length;
@@ -31,7 +29,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentSection, onSect
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'M4 6h16M4 12h16M4 18h16' },
     { id: 'notas', label: 'Notas Fiscais', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-    { id: 'ordens', label: 'Ordem', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
   ];
 
   if (!isGuest) navItems.push({ id: 'comentarios', label: 'Apontamentos', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' });

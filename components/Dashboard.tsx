@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { AppState, NotaFiscal, OrdemProducao, Comentario } from '../types';
+import { AppState, NotaFiscal, Comentario } from '../types';
 import { differenceInDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, format, startOfWeek, endOfWeek, addMonths, subMonths, isSameMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -10,28 +10,25 @@ interface DashboardProps {
   onRunAnalysis: () => void;
   onRefresh?: () => void;
   isGuest?: boolean;
-  onNavigateToList?: (section: 'notas' | 'ordens' | 'comentarios') => void;
+  onNavigateToList?: (section: 'notas' | 'comentarios') => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, analysis, onRunAnalysis, onRefresh, isGuest, onNavigateToList }) => {
   const today = new Date();
   const [viewDate, setViewDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-  const [activeTab, setActiveTab] = useState<'notas' | 'ordens' | 'comentarios'>('notas');
+  const [activeTab, setActiveTab] = useState<'notas' | 'comentarios'>('notas');
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
 
   const monthStats = useMemo(() => {
     const monthStr = format(viewDate, 'yyyy-MM');
     const notasMes = data.notas.filter(n => n.data.startsWith(monthStr));
-    const ordensMes = data.ordens.filter(o => o.data.startsWith(monthStr));
     const criticosMes = [
       ...notasMes.filter(n => ['Pendente', 'Em Conferência', 'Pré Nota'].includes(n.status) && differenceInDays(today, parseISO(n.data)) >= 3),
-      ...ordensMes.filter(o => o.status === 'Em Separação' && differenceInDays(today, parseISO(o.data)) >= 3)
     ];
 
     return [
       { label: 'Notas/Mês', value: notasMes.length, icon: '📄', color: 'blue' },
-      { label: 'Ordens/Mês', value: ordensMes.length, icon: '⚙️', color: 'emerald' },
       { label: 'Apontam.', value: data.comentarios.filter(c => c.data.startsWith(monthStr)).length, icon: '💬', color: 'purple' },
       { label: 'Críticos', value: criticosMes.length, icon: '🚨', color: 'red' },
     ];
@@ -45,14 +42,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, analysis, onRunAnaly
     const dayStr = format(date, 'yyyy-MM-dd');
     return {
       notas: data.notas.filter(n => n.data === dayStr),
-      ordens: data.ordens.filter(o => o.data === dayStr),
       comentarios: data.comentarios.filter(c => c.data === dayStr),
     };
   };
 
   const getDayStatusStyle = (date: Date) => {
-    const { notas, ordens } = getDayDetails(date);
-    const hasActivity = notas.length > 0 || ordens.length > 0;
+    const { notas } = getDayDetails(date);
+    const hasActivity = notas.length > 0;
     let base = "border-4 shadow-sm transition-all ";
     if (isSameDay(date, today)) return base + 'bg-blue-50 border-blue-500 text-blue-900 ring-4 ring-blue-100 rounded-[2rem]';
     if (notas.some(n => ['Pendente', 'Em Conferência', 'Pré Nota'].includes(n.status) && differenceInDays(today, date) >= 3)) return base + 'bg-red-50 border-red-500 text-red-900 shadow-lg rounded-[2rem]';
@@ -90,14 +86,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, analysis, onRunAnaly
         </div>
 
         {/* Grid de Stats (Ocupa 8/12) */}
-        <div className="xl:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="xl:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
           {monthStats.map((stat) => (
             <div key={stat.label} className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-gray-300 flex flex-col items-center justify-center text-center hover:border-emerald-500 transition-all border-b-[10px] border-b-emerald-600">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl border-2 mb-4 ${
-                stat.color === 'blue' ? 'bg-blue-50 text-blue-600 border-blue-200' : 
-                stat.color === 'emerald' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 
-                stat.color === 'purple' ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-red-50 text-red-600 border-red-200'
-              }`}>{stat.icon}</div>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl border-2 mb-4 ${stat.color === 'blue' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                  stat.color === 'emerald' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                    stat.color === 'purple' ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-red-50 text-red-600 border-red-200'
+                }`}>{stat.icon}</div>
               <div>
                 <p className="text-3xl font-black text-gray-900 italic tracking-tighter leading-none">{stat.value}</p>
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-2">{stat.label}</p>
@@ -130,18 +125,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, analysis, onRunAnaly
             <div key={d} className="text-center text-[10px] font-black text-gray-400 uppercase py-2 tracking-[0.2em]">{d}</div>
           ))}
           {calendarInterval.map((date, i) => {
-            const { notas, ordens } = getDayDetails(date);
+            const { notas } = getDayDetails(date);
             const isCurrentMonth = isSameMonth(date, viewDate);
             return (
-              <div 
-                key={i} 
-                onClick={() => { if(isCurrentMonth && (notas.length > 0 || ordens.length > 0)) { setSelectedDay(date); setActiveTab('notas'); } }} 
+              <div
+                key={i}
+                onClick={() => { if (isCurrentMonth && (notas.length > 0)) { setSelectedDay(date); setActiveTab('notas'); } }}
                 className={`min-h-[130px] p-5 flex flex-col justify-between ${getDayStatusStyle(date)} ${!isCurrentMonth ? 'opacity-10 pointer-events-none' : 'cursor-pointer hover:scale-[1.03] active:scale-95'}`}
               >
                 <span className="text-2xl font-black italic">{format(date, 'd')}</span>
                 <div className="flex flex-col gap-1.5 mt-4">
-                   {notas.length > 0 && <div className="flex justify-between items-center bg-white/95 px-2.5 py-1.5 rounded-lg text-[8px] font-black border border-blue-100 uppercase"><span>NF</span><span>{notas.length}</span></div>}
-                   {ordens.length > 0 && <div className="flex justify-between items-center bg-white/95 px-2.5 py-1.5 rounded-lg text-[8px] font-black border border-emerald-100 uppercase"><span>OP</span><span>{ordens.length}</span></div>}
+                  {notas.length > 0 && <div className="flex justify-between items-center bg-white/95 px-2.5 py-1.5 rounded-lg text-[8px] font-black border border-blue-100 uppercase"><span>NF</span><span>{notas.length}</span></div>}
                 </div>
               </div>
             );
@@ -164,10 +158,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, analysis, onRunAnaly
             </div>
 
             <div className="flex bg-gray-50 border-b-2 border-gray-200 shrink-0">
-               <button onClick={() => setActiveTab('notas')} className={`flex-1 py-6 font-black text-[11px] uppercase tracking-widest transition-all ${activeTab === 'notas' ? 'text-blue-700 bg-white border-b-4 border-blue-700' : 'text-gray-400 hover:text-gray-600'}`}>Notas ({selectedDayDetails?.notas.length})</button>
-               <button onClick={() => setActiveTab('ordens')} className={`flex-1 py-6 font-black text-[11px] uppercase tracking-widest transition-all ${activeTab === 'ordens' ? 'text-emerald-700 bg-white border-b-4 border-emerald-700' : 'text-gray-400 hover:text-gray-600'}`}>Ordens ({selectedDayDetails?.ordens.length})</button>
+              <button onClick={() => setActiveTab('notas')} className={`flex-1 py-6 font-black text-[11px] uppercase tracking-widest transition-all ${activeTab === 'notas' ? 'text-blue-700 bg-white border-b-4 border-blue-700' : 'text-gray-400 hover:text-gray-600'}`}>Notas ({selectedDayDetails?.notas.length})</button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-10 bg-gray-50/30 custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
                 {activeTab === 'notas' && selectedDayDetails?.notas.map(n => (
@@ -181,7 +174,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, analysis, onRunAnaly
                       <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Conferente: <span className="text-gray-800">{n.conferente}</span></p>
                     </div>
                     {n.observacao && <div className="mt-6 p-4 bg-blue-50/50 rounded-2xl text-[10px] italic border border-blue-100 line-clamp-3">"{n.observacao}"</div>}
-                    <button 
+                    <button
                       onClick={() => { setSelectedDay(null); onNavigateToList?.('notas'); }}
                       className="absolute bottom-4 right-4 w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-xl hover:scale-110 transition-transform opacity-0 group-hover:opacity-100 active:scale-95"
                       title="Ver na Lista"
@@ -191,31 +184,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, analysis, onRunAnaly
                   </div>
                 ))}
 
-                {activeTab === 'ordens' && selectedDayDetails?.ordens.map(o => (
-                  <div key={o.id} className="p-6 bg-white border-4 border-gray-200 rounded-3xl border-l-[14px] border-l-emerald-600 flex flex-col justify-between group relative overflow-hidden shadow-sm hover:border-emerald-400 transition-all">
-                    <div>
-                      <div className="flex justify-between items-start mb-5">
-                        <span className="text-[9px] font-black text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md truncate max-w-[140px] border border-gray-200">OP: {o.numero}</span>
-                        <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-lg ${getStatusColor(o.status)}`}>{o.status}</span>
-                      </div>
-                      <h4 className="text-sm font-black text-gray-900 uppercase leading-tight line-clamp-2 mb-3">{o.documento}</h4>
-                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Responsável: <span className="text-gray-800">{o.conferente}</span></p>
-                    </div>
-                    {o.observacao && <div className="mt-6 p-4 bg-emerald-50/50 rounded-2xl text-[10px] italic border border-emerald-100 line-clamp-3">"{o.observacao}"</div>}
-                    <button 
-                      onClick={() => { setSelectedDay(null); onNavigateToList?.('ordens'); }}
-                      className="absolute bottom-4 right-4 w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-xl hover:scale-110 transition-transform opacity-0 group-hover:opacity-100 active:scale-95"
-                      title="Ver na Lista"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    </button>
-                  </div>
-                ))}
               </div>
             </div>
-            
+
             <div className="px-10 py-6 bg-gray-50 border-t-2 border-gray-100 shrink-0">
-               <button onClick={() => setSelectedDay(null)} className="w-full py-5 bg-[#005c3e] text-white font-black rounded-2xl text-[11px] uppercase tracking-widest shadow-xl border-b-6 border-emerald-950 active:translate-y-1 transition-all">Confirmar e Sair</button>
+              <button onClick={() => setSelectedDay(null)} className="w-full py-5 bg-[#005c3e] text-white font-black rounded-2xl text-[11px] uppercase tracking-widest shadow-xl border-b-6 border-emerald-950 active:translate-y-1 transition-all">Confirmar e Sair</button>
             </div>
           </div>
         </div>
@@ -225,17 +198,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, analysis, onRunAnaly
       {showAnalysisModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-2xl">
           <div className="bg-white w-full max-w-7xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border-4 border-gray-400 h-[85vh] animate-scaleIn">
-             <div className="p-10 bg-[#005c3e] text-white flex justify-between items-center">
-                <h3 className="text-3xl font-black uppercase italic tracking-tighter">Relatório Nano IA</h3>
-                <button onClick={() => setShowAnalysisModal(false)} className="p-4 bg-white/10 hover:bg-white/20 rounded-full border-2 border-white/20 transition-all">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-             </div>
-             <div className="p-14 flex-1 overflow-y-auto custom-scrollbar">
-                <div className="text-xl font-bold text-gray-800 leading-relaxed italic bg-emerald-50 p-12 rounded-[2rem] border-4 border-emerald-200 min-h-full whitespace-pre-wrap shadow-inner">
-                  {analysis || "Sincronizando processamento Nano IA..."}
-                </div>
-             </div>
+            <div className="p-10 bg-[#005c3e] text-white flex justify-between items-center">
+              <h3 className="text-3xl font-black uppercase italic tracking-tighter">Relatório Nano IA</h3>
+              <button onClick={() => setShowAnalysisModal(false)} className="p-4 bg-white/10 hover:bg-white/20 rounded-full border-2 border-white/20 transition-all">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-14 flex-1 overflow-y-auto custom-scrollbar">
+              <div className="text-xl font-bold text-gray-800 leading-relaxed italic bg-emerald-50 p-12 rounded-[2rem] border-4 border-emerald-200 min-h-full whitespace-pre-wrap shadow-inner">
+                {analysis || "Sincronizando processamento Nano IA..."}
+              </div>
+            </div>
           </div>
         </div>
       )}
