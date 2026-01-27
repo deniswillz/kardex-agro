@@ -169,16 +169,55 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
     }
   }, [initialData, prefill]);
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const optimizeImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1024;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height *= maxDim / width;
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width *= maxDim / height;
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7)); // 0.7 quality for compression
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     const remainingSlots = 2 - photos.length;
     const filesToProcess = Array.from(files).slice(0, remainingSlots) as File[];
-    filesToProcess.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => setPhotos(prev => [...prev, reader.result as string]);
-      reader.readAsDataURL(file);
-    });
+
+    for (const file of filesToProcess) {
+      try {
+        const optimized = await optimizeImage(file);
+        setPhotos(prev => [...prev, optimized]);
+      } catch (err) {
+        console.error('Erro ao otimizar imagem:', err);
+      }
+    }
   };
 
   const removePhoto = (index: number) => setPhotos(prev => prev.filter((_, i) => i !== index));
@@ -433,6 +472,48 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {/* PHOTOS - Only for ENTRADA */}
+        {type === 'ENTRADA' && opType === 'MOVIMENTACAO' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Fotos do Produto (Máx 2)</label>
+              <span className="text-[10px] font-black text-slate-400 uppercase">{photos.length}/2</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {photos.map((photo, idx) => (
+                <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden border-2 border-slate-100 group">
+                  <img src={photo} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(idx)}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+              {photos.length < 2 && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="aspect-video rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-primary-500 hover:text-primary-500 hover:bg-primary-50 transition-all"
+                >
+                  <Camera size={24} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Adicionar Foto</span>
+                </button>
+              )}
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handlePhotoUpload}
+              accept="image/*"
+              className="hidden"
+              multiple
+            />
           </div>
         )}
 

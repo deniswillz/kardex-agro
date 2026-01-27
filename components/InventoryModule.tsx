@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ClipboardList, Plus, Search, Calendar, User as UserIcon, AlertCircle, Clock, ArrowRight, Trash2, TrendingUp, BarChart } from 'lucide-react';
 import { InventorySession, User } from '../types';
-import { loadInventorySessions, saveInventorySessions, deleteInventorySession } from '../services/storage';
+import { loadInventorySessions, saveInventorySessions, deleteInventorySession, lockSession, unlockSession } from '../services/storage';
 import { importInventoryFromExcel } from '../services/excel';
 import { InventorySessionExecution } from './InventorySessionExecution';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -69,10 +69,15 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
     }
   };
 
-  const handleSaveSession = async (updatedSession: InventorySession) => {
+  const handleSaveSession = async (updatedSession: InventorySession, redirect?: boolean) => {
     const updated = sessions.map(s => s.id === updatedSession.id ? updatedSession : s);
     setSessions(updated);
     await saveInventorySessions(updated);
+    if (redirect) {
+      handleBackFromSession();
+      // Inform the parent (App.tsx) to go to Dashboard
+      window.dispatchEvent(new CustomEvent('navigate-to-dashboard'));
+    }
   };
 
   const filteredSessions = sessions.filter(s => {
@@ -85,11 +90,32 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
 
   const activeSession = sessions.find(s => s.id === activeSessionId);
 
+  const handleOpenSession = async (session: InventorySession) => {
+    if (session.status === 'FINALIZADO') {
+      setActiveSessionId(session.id);
+      return;
+    }
+
+    const lockResult = await lockSession(session.id, currentUser?.name || 'Usuário');
+    if (lockResult.success) {
+      setActiveSessionId(session.id);
+    } else {
+      alert(`Esta sessão está sendo editada por: ${lockResult.lockedBy || 'outro usuário'}`);
+    }
+  };
+
+  const handleBackFromSession = async () => {
+    if (activeSessionId) {
+      await unlockSession(activeSessionId);
+    }
+    setActiveSessionId(null);
+  };
+
   if (activeSessionId && activeSession) {
     return (
       <InventorySessionExecution
         session={activeSession}
-        onBack={() => setActiveSessionId(null)}
+        onBack={handleBackFromSession}
         onSave={handleSaveSession}
       />
     );
@@ -203,7 +229,7 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
-                      onClick={() => setActiveSessionId(session.id)}
+                      onClick={() => handleOpenSession(session)}
                       className="p-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-md shadow-primary-500/10"
                     >
                       <ArrowRight size={18} />
@@ -261,7 +287,7 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
               </div>
               <div className="flex gap-2 pt-2 border-t border-slate-100">
                 <button
-                  onClick={() => setActiveSessionId(session.id)}
+                  onClick={() => handleOpenSession(session)}
                   className="flex-1 bg-primary-600 text-white py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-md flex items-center justify-center gap-2"
                 >
                   <ArrowRight size={14} /> Acessar Auditoria

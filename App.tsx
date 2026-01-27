@@ -92,9 +92,13 @@ const App: React.FC = () => {
             refreshData();
         });
 
+        const handleNavigateToDashboard = () => setView('DASHBOARD');
+        window.addEventListener('navigate-to-dashboard', handleNavigateToDashboard);
+
         // Cleanup ao desmontar componente
         return () => {
             unsubscribe();
+            window.removeEventListener('navigate-to-dashboard', handleNavigateToDashboard);
         };
     }, []);
 

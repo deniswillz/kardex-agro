@@ -1,7 +1,6 @@
-
 import React, { useMemo, useState } from 'react';
 import { Transaction, InventoryItem, WAREHOUSES } from '../types';
-import { Search, Package, ArrowRight, AlertTriangle, MapPin, Edit3, Save, X, ArrowUpCircle, ArrowDownCircle, ClipboardList, MoveHorizontal, PackageSearch, Clock, Calendar } from 'lucide-react';
+import { Search, Package, ArrowRight, AlertTriangle, MapPin, Edit3, Save, X, ArrowUpCircle, ArrowDownCircle, ClipboardList, MoveHorizontal, PackageSearch, Clock, Calendar, Camera } from 'lucide-react';
 import { saveTransaction } from '../services/storage';
 
 interface StockBalanceProps {
@@ -13,11 +12,109 @@ interface StockBalanceProps {
 
 const MAIN_WAREHOUSES = ['01', '20', '22'];
 
+interface ProductDetailsPopupProps {
+  item: InventoryItem;
+  transactions: Transaction[];
+  onClose: () => void;
+}
+
+const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transactions, onClose }) => {
+  const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+
+  // Get all unique photos for this product from history
+  const productPhotos = useMemo(() => {
+    const photosSet = new Set<string>();
+    transactions
+      .filter(t => t.code === item.code && t.photos && t.photos.length > 0)
+      .forEach(t => t.photos.forEach(p => photosSet.add(p)));
+    return Array.from(photosSet);
+  }, [item.code, transactions]);
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight leading-none mb-1">{item.name}</h3>
+            <p className="text-xs font-mono text-slate-500 uppercase tracking-tighter">{item.code}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto no-scrollbar space-y-6">
+          {/* Info Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo Total</p>
+              <p className="text-lg font-black text-slate-900">{item.balance} <span className="text-xs">{item.unit}</span></p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Localização</p>
+              <p className="text-xs font-black text-slate-900 uppercase">{item.warehouse} - {item.address || 'Geral'}</p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Estoque Mín.</p>
+              <p className="text-lg font-black text-slate-900">{item.minStock || 0}</p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Últ. Contagem</p>
+              <p className="text-xs font-black text-slate-900">{item.lastCount ? new Date(item.lastCount).toLocaleDateString() : '--'}</p>
+            </div>
+          </div>
+
+          {/* Photos Section */}
+          <div>
+            <h4 className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
+              <Camera size={14} /> Galeria de Fotos
+            </h4>
+            {productPhotos.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {productPhotos.map((photo, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setExpandedPhoto(photo)}
+                    className="aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 cursor-pointer hover:border-primary-500 transition-all shadow-sm"
+                  >
+                    <img src={photo} alt={`Produto ${idx}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-slate-50 rounded-2xl p-12 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-100">
+                <Camera size={48} className="mb-2 opacity-20" />
+                <p className="text-[10px] font-black uppercase tracking-widest">Nenhuma foto encontrada</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded Photo Overlay */}
+      {expandedPhoto && (
+        <div
+          className="fixed inset-0 bg-black/95 z-[120] flex items-center justify-center p-4 cursor-zoom-out animate-fade-in"
+          onClick={() => setExpandedPhoto(null)}
+        >
+          <button className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
+            <X size={32} />
+          </button>
+          <img src={expandedPhoto} alt="Zoom" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickAction, transactions, onUpdateTransactions }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('ALL');
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [tempMin, setTempMin] = useState<number>(0);
+  const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
 
   const stockData = useMemo(() => {
     const map: Record<string, InventoryItem> = {};
@@ -60,7 +157,6 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
           }
         }
       } else if (t.operationType === 'CONTAGEM') {
-        // Calcula o saldo do sistema NO MOMENTO da contagem
         const balanceAtCountTime = transactions
           .filter(tx =>
             tx.code === t.code &&
@@ -88,7 +184,6 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
     return Object.values(map).map(item => {
       const lastCountData = lastCounts[item.key];
       const isCritical = minStocks[item.code] > 0 && globalBalances[item.code] <= minStocks[item.code];
-      // Divergência: contagem ≠ saldo do sistema NO MOMENTO da contagem
       const isDivergent = lastCountData !== undefined && lastCountData.quantity !== lastCountData.balanceAtCount;
 
       return {
@@ -100,10 +195,8 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
     }).sort((a, b) => a.warehouse.localeCompare(b.warehouse) || a.code.localeCompare(b.code));
   }, [transactions]);
 
-  // Use stockData calculado internamente (com lastEntry/lastExit) ao invés de stockItems props
-  // Filtra itens com saldo zero
   const filteredData = stockData.filter(item => {
-    if (item.balance <= 0) return false; // Oculta itens com saldo zero ou negativo
+    if (item.balance <= 0) return false;
     const matchesSearch = item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesWarehouse = warehouseFilter === 'ALL' || item.warehouse === warehouseFilter;
@@ -117,7 +210,6 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
 
   const handleSaveMin = async () => {
     if (editingCode !== null) {
-      // Update minStock in all transactions with this code
       const updated = transactions.map(t =>
         t.code === editingCode ? { ...t, minStock: tempMin } : t
       );
@@ -161,7 +253,6 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
       </div>
 
       <div className="overflow-x-auto overflow-y-auto flex-1 no-scrollbar p-2 md:p-0">
-        {/* DESKTOP TABLE */}
         <table className="w-full text-left border-collapse min-w-[1200px] hidden md:table">
           <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
             <tr>
@@ -180,9 +271,13 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
               <tr key={item.key} className={`hover:bg-primary-50/30 transition-colors group ${item.isCritical ? 'bg-red-50/20' : 'bg-white'}`}>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg border ${item.isCritical ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                    <button
+                      onClick={() => setSelectedProduct(item)}
+                      className={`p-2 rounded-lg border transition-all hover:scale-105 active:scale-95 ${item.isCritical ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'}`}
+                      title="Ver detalhes e fotos"
+                    >
                       <Package size={20} />
-                    </div>
+                    </button>
                     <div>
                       <div className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{item.name}</div>
                       <div className="text-sm font-mono text-slate-500 uppercase tracking-tight">{item.code}</div>
@@ -239,15 +334,17 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
           </tbody>
         </table>
 
-        {/* MOBILE CARDS */}
         <div className="md:hidden flex flex-col gap-3 py-2 pb-24 px-1">
           {filteredData.map((item) => (
             <div key={item.key} className={`bg-white border rounded-xl overflow-hidden shadow-sm active:bg-slate-50 transition-colors ${item.isCritical ? 'border-red-100 shadow-red-50' : 'border-slate-200'}`}>
               <div className="p-4 flex items-center justify-between border-b border-slate-50">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${item.isCritical ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                  <button
+                    onClick={() => setSelectedProduct(item)}
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-all active:scale-90 ${item.isCritical ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                  >
                     <Package size={18} />
-                  </div>
+                  </button>
                   <div>
                     <h4 className={`text-xs font-black uppercase leading-none mb-1 ${item.isCritical ? 'text-red-700' : 'text-slate-800'}`}>{item.name}</h4>
                     <span className="text-[10px] font-mono text-slate-400 tracking-tighter uppercase">{item.code}</span>
@@ -312,6 +409,14 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
             </div>
           </div>
         </div>
+      )}
+
+      {selectedProduct && (
+        <ProductDetailsPopup
+          item={selectedProduct}
+          transactions={transactions}
+          onClose={() => setSelectedProduct(null)}
+        />
       )}
     </div>
   );

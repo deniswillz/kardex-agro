@@ -7,7 +7,7 @@ import { ConfirmationModal } from './ConfirmationModal';
 interface InventorySessionExecutionProps {
   session: InventorySession;
   onBack: () => void;
-  onSave: (updatedSession: InventorySession) => void;
+  onSave: (updatedSession: InventorySession, redirect?: boolean) => void;
 }
 
 export const InventorySessionExecution: React.FC<InventorySessionExecutionProps> = ({ session, onBack, onSave }) => {
@@ -55,7 +55,7 @@ export const InventorySessionExecution: React.FC<InventorySessionExecutionProps>
       responsible,
       items
     };
-    onSave(updatedSession);
+    onSave(updatedSession, true); // true indicates we want to redirect
   };
 
   const handleFinalize = () => {

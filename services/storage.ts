@@ -171,7 +171,9 @@ export const loadInventorySessions = async (): Promise<InventorySession[]> => {
       createdAt: s.created_at,
       closedAt: s.closed_at,
       status: s.status,
-      items: s.items || []
+      items: s.items || [],
+      lockedBy: s.locked_by,
+      lockTimestamp: s.lock_timestamp
     })) || [];
   } catch (err) {
     console.error('Load inventory sessions failed:', err);
@@ -191,7 +193,9 @@ export const saveInventorySessions = async (sessions: InventorySession[]): Promi
       created_at: s.createdAt,
       closed_at: s.closedAt,
       status: s.status,
-      items: s.items
+      items: s.items,
+      locked_by: s.lockedBy,
+      lock_timestamp: s.lockTimestamp
     }));
 
     const { error } = await supabase
@@ -221,6 +225,60 @@ export const deleteInventorySession = async (id: string): Promise<void> => {
   } catch (err) {
     console.error('Delete inventory session failed:', err);
     throw err;
+  }
+};
+
+export const lockSession = async (sessionId: string, userName: string): Promise<{ success: boolean; lockedBy?: string }> => {
+  if (!isSupabaseConfigured()) return { success: true };
+
+  try {
+    // Primeiro verifica bloqueio existente
+    const { data: session, error: fetchError } = await supabase
+      .from('inventory_sessions')
+      .select('locked_by, lock_timestamp')
+      .eq('id', sessionId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const now = Date.now();
+    const LOCK_TIMEOUT = 10 * 60 * 1000; // 10 minutos de timeout
+
+    // Se estiver bloqueado por outro e o bloqueio ainda é válido
+    if (session.locked_by && session.locked_by !== userName && (now - session.lock_timestamp) < LOCK_TIMEOUT) {
+      return { success: false, lockedBy: session.locked_by };
+    }
+
+    // Tenta assumir o bloqueio
+    const { error: updateError } = await supabase
+      .from('inventory_sessions')
+      .update({
+        locked_by: userName,
+        lock_timestamp: now
+      })
+      .eq('id', sessionId);
+
+    if (updateError) throw updateError;
+    return { success: true };
+  } catch (err) {
+    console.error('Lock session failed:', err);
+    return { success: false };
+  }
+};
+
+export const unlockSession = async (sessionId: string): Promise<void> => {
+  if (!isSupabaseConfigured()) return;
+
+  try {
+    await supabase
+      .from('inventory_sessions')
+      .update({
+        locked_by: null,
+        lock_timestamp: null
+      })
+      .eq('id', sessionId);
+  } catch (err) {
+    console.error('Unlock session failed:', err);
   }
 };
 

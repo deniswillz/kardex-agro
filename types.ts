@@ -74,6 +74,8 @@ export interface InventorySession {
   closedAt?: number; // Data Fechamento
   status: 'ABERTO' | 'FINALIZADO';
   items: InventorySessionItem[];
+  lockedBy?: string; // User who is currently editing
+  lockTimestamp?: number; // When the lock was acquired
 }
 
 export interface DashboardStats {
