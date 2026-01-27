@@ -1,5 +1,5 @@
 {
-  "name": "kardex-agro",
+  "name": "diário-de-bordo---nano-pro",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,10 +11,9 @@
   "dependencies": {
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "lucide-react": "^0.562.0",
-    "recharts": "^3.6.0",
-    "@supabase/supabase-js": "^2.45.0",
-    "html5-qrcode": "^2.3.8"
+    "@google/genai": "^1.36.0",
+    "date-fns": "^4.1.0",
+    "@supabase/supabase-js": "^2.90.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

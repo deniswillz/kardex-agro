@@ -1,7 +1,5 @@
 {
-  "name": "Kardex Agro",
-  "description": "A modern, responsive logistics inventory management application (Kardex). Features real-time local state synchronization, data visualization, Excel export, and mobile-first design.",
-  "requestFramePermissions": [
-    "camera"
-  ]
+  "name": "Diário de Bordo - Nano Pro",
+  "description": "Sistema de alta gestão para rastreio de Notas Fiscais e Ordens de Produção, com sincronização em tempo real, análise inteligente via Gemini e interface industrial Nano.",
+  "requestFramePermissions": []
 }

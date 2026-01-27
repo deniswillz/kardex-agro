@@ -1,99 +1,54 @@
 
-export type MovementType = 'ENTRADA' | 'SAIDA';
-export type OperationType = 'MOVIMENTACAO' | 'CONTAGEM';
-export type UserProfile = 'ADMIN' | 'OPERADOR' | 'AUDITOR';
+export type UserRole = 'admin' | 'editor' | 'operador' | 'guest';
 
 export interface User {
   id: string;
-  name: string; // Nome de exibição
-  login: string; // Login para autenticação
+  username: string;
+  name: string;
+  role: UserRole;
   password?: string;
-  profile: UserProfile;
-  lastLogin?: number;
-  active: boolean;
+  created_at?: string;
 }
 
-export interface Transaction {
+export interface NotaFiscal {
   id: string;
-  date: string; // ISO Date string YYYY-MM-DD
-  code: string;
-  name: string;
-  type: MovementType;
-  operationType: OperationType;
-  quantity: number;
-  unit: string; // UN, KG, CX, etc.
-  minStock: number;
-  warehouse: string; // Used as Origin in the UI
-  destinationWarehouse?: string;
-  destAddress?: string; // Endereço de destino para transferências
-  address?: string;
-  responsible?: string;
-  photos: string[];
-  timestamp: number;
-  updatedAt?: number;
-  updatedBy?: string;
+  data: string;
+  numero: string;
+  fornecedor: string;
+  conferente: string;
+  tipo: 'Nacional' | 'Importado' | 'Retorno' | 'Devolução' | '';
+  observacao: string;
+  created_by?: string;
 }
 
-export interface InventoryItem {
-  key: string; // code_warehouse_address
-  code: string;
-  name: string;
-  warehouse: string;
-  address: string;
-  unit: string;
-  balance: number;
-  minStock: number;
-  lastEntry?: string;
-  lastExit?: string;
-  lastCount: string; // Date of last transaction
-  lastCountQuantity?: number; // Physical quantity from last CONTAGEM
-  isCritical: boolean;
-  isDivergent: boolean; // True if balance != lastCountQuantity
-  entries: number;
-  exits: number;
-}
-
-export interface InventorySessionItem {
+export interface OrdemProducao {
   id: string;
-  code: string;
-  name: string;
-  warehouse: string;
-  address: string;
-  unit: string;
-  systemBalance: number;
-  countedBalance: number | null;
-  status: 'PENDENTE' | 'CONFERIDO';
+  data: string;
+  numero: string;
+  documento: string;
+  conferente: string;
+  status: 'Em Separação' | 'Concluída';
+  tipo: 'Chicote' | 'Mecânica' | 'Eletrônica' | 'Engenharia' | 'P&D' | '';
+  observacao: string;
+  created_by?: string;
 }
 
-export interface InventorySession {
+export interface Comentario {
   id: string;
-  name: string;
-  responsible: string; // Criador - who created the inventory
-  conferente?: string; // Conferente - who checked the inventory
-  createdAt: number;
-  closedAt?: number; // Data Fechamento
-  status: 'ABERTO' | 'FINALIZADO';
-  items: InventorySessionItem[];
+  data: string;
+  texto: string;
+  created_by?: string;
 }
 
-export interface DashboardStats {
-  totalStockCount: number;
-  totalTransactions: number;
-  entriesCount: number;
-  exitsCount: number;
+export interface AppState {
+  notas: NotaFiscal[];
+  ordens: OrdemProducao[];
+  comentarios: Comentario[];
 }
 
-export const WAREHOUSES = [
-  { id: '01', name: '01 (Matriz)' },
-  { id: '02', name: '02 (Entrada)' },
-  { id: '03', name: '03 (Importado)' },
-  { id: '04_CH', name: '04 (Chicote)' },
-  { id: '04_MC', name: '04 (Mecanica)' },
-  { id: '04_EL', name: '04 (Eletronica)' },
-  { id: '08', name: '08 (P&D)' },
-  { id: '11', name: '11 (Filial)' },
-  { id: '19', name: '19 (Qualidade)' },
-  { id: '20', name: '20 (Eletronica)' },
-  { id: '21', name: '21 (Assistência)' },
-  { id: '22', name: '22 (Mecanica)' },
-];
+export interface Backup {
+  id: string;
+  created_at: string;
+  data_snapshot: AppState;
+  tipo: 'manual' | 'automatico';
+}
