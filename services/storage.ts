@@ -282,6 +282,25 @@ export const unlockSession = async (sessionId: string): Promise<void> => {
   }
 };
 
+export const unlockAllSessions = async (): Promise<void> => {
+  if (!isSupabaseConfigured()) return;
+
+  try {
+    const { error } = await supabase
+      .from('inventory_sessions')
+      .update({
+        locked_by: null,
+        lock_timestamp: null
+      })
+      .not('locked_by', 'is', null);
+
+    if (error) throw error;
+  } catch (err) {
+    console.error('Unlock all sessions failed:', err);
+    throw err;
+  }
+};
+
 // ============ USERS (Supabase Only) ============
 
 export const loadUsers = async (): Promise<User[]> => {

@@ -14,14 +14,15 @@ interface SettingsProps {
   onImportExcel: () => void;
   onExportKardex: () => void;
   onExportBackup: () => void;
-  onManualBackup: () => void;
   onCloudRestore: (backupId: string) => void;
   onFetchBackups: () => Promise<any[]>;
+  onUnlockAllSessions: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
   users, onSaveUsers, onWipeData, onImportBackup,
-  onImportExcel, onExportKardex, onExportBackup, onManualBackup, onCloudRestore, onFetchBackups
+  onImportExcel, onExportKardex, onExportBackup, onManualBackup, onCloudRestore, onFetchBackups,
+  onUnlockAllSessions
 }) => {
   const [activeTab, setActiveTab] = useState<'USERS' | 'MAINTENANCE' | 'DATA'>('USERS');
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -291,6 +292,26 @@ export const Settings: React.FC<SettingsProps> = ({
                   className="px-6 py-2 border border-red-200 text-red-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-red-600 hover:text-white transition-all"
                 >
                   Wipe Data
+                </button>
+              </div>
+
+              <div className="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between group hover:border-amber-500 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-amber-50 text-amber-500 rounded-xl group-hover:bg-amber-500 group-hover:text-white transition-all"><Lock size={24} /></div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">Liberar Todas as Sessões</h4>
+                    <p className="text-xs text-slate-400">Remove todos os bloqueios de inventário (Útil se sessões ficarem presas)</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (confirm('Deseja liberar o acesso a todas as sessões de inventário bloqueadas por outros usuários?')) {
+                      onUnlockAllSessions();
+                    }
+                  }}
+                  className="px-6 py-2 border border-amber-200 text-amber-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-amber-500 hover:text-white transition-all"
+                >
+                  Liberar Tudo
                 </button>
               </div>
             </div>

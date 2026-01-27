@@ -7,7 +7,8 @@ import { Transaction, User as UserType } from './types';
 import {
     loadTransactions, saveTransaction, saveTransactions, deleteTransaction, loadUsers, saveUsers,
     wipeTransactions, importBackupFromFile, exportBackupToFile, scheduleAutoBackup, subscribeToTransactions,
-    createManualBackup, getBackups, restoreFromCloud
+    createManualBackup, getBackups, restoreFromCloud, loadInventorySessions, saveInventorySessions,
+    unlockAllSessions
 } from './services/storage';
 import { importFromExcel, exportToExcel, downloadTemplate } from './services/excel';
 import { useStockCalculation } from './hooks/useStockCalculation';
@@ -242,6 +243,16 @@ const App: React.FC = () => {
             alert('Backup restaurado com sucesso!');
         } else {
             alert('Erro ao restaurar backup. Verifique o formato do arquivo.');
+        }
+    };
+
+    const handleUnlockAllSessions = async () => {
+        try {
+            await unlockAllSessions();
+            alert('Todas as sessões foram liberadas com sucesso!');
+            refreshData();
+        } catch (err) {
+            alert('Erro ao liberar sessões.');
         }
     };
 
@@ -526,6 +537,7 @@ const App: React.FC = () => {
                         onManualBackup={handleManualBackup}
                         onCloudRestore={handleCloudRestore}
                         onFetchBackups={getBackups}
+                        onUnlockAllSessions={handleUnlockAllSessions}
                     />
                 )}
             </main>
