@@ -27,6 +27,18 @@ export const InventorySessionExecution: React.FC<InventorySessionExecutionProps>
     setItems(session.items);
   }, [session.items]);
 
+  // Libera bloqueio ao fechar aba/navegador ou desmontar
+  useEffect(() => {
+    if (isFinalized) return;
+    const handleUnload = () => {
+      // O Supabase Realtime ou o TTL de 10 min cuidará disso se o beacon falhar
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, [isFinalized]);
+
   const handleUpdateCount = (itemId: string, val: string) => {
     if (isFinalized) return;
     const numVal = val === '' ? null : Number(val);

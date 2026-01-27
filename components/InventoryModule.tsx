@@ -221,10 +221,17 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
                   </div>
                 </td>
                 <td className="px-4 py-4">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${session.status === 'ABERTO' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-800 text-white border-slate-900'
-                    }`}>
-                    {session.status === 'ABERTO' ? 'Em Aberto' : 'Finalizado'}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border w-fit ${session.status === 'ABERTO' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 'bg-slate-800 text-white border-slate-900'
+                      }`}>
+                      {session.status === 'ABERTO' ? 'Em Aberto' : 'Finalizado'}
+                    </span>
+                    {session.status === 'ABERTO' && session.lockedBy && (
+                      <span className="flex items-center gap-1 text-[8px] font-black text-amber-500 uppercase animate-pulse">
+                        <Lock size={8} /> Em edição por: {session.lockedBy}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -263,10 +270,17 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{session.items.length} ITENS</span>
                 </div>
               </div>
-              <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full border ${session.status === 'ABERTO' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-800 text-white border-slate-900'
-                }`}>
-                {session.status === 'ABERTO' ? 'ABERTO' : 'FECHADO'}
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full border ${session.status === 'ABERTO' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 'bg-slate-800 text-white border-slate-900'
+                  }`}>
+                  {session.status === 'ABERTO' ? 'ABERTO' : 'FECHADO'}
+                </span>
+                {session.status === 'ABERTO' && session.lockedBy && (
+                  <span className="text-[7px] font-black text-amber-500 uppercase animate-pulse flex items-center gap-0.5">
+                    <Lock size={7} /> Editando: {session.lockedBy}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="p-4 bg-slate-50/50 flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-4">

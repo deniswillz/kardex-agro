@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     LayoutDashboard, Package, History, PlusCircle, Settings as SettingsIcon,
-    ClipboardList, BarChart3, Menu, X, LogOut, User, Lock
+    ClipboardList, BarChart3, Menu, X, LogOut, User, Lock, Sun, Moon
 } from 'lucide-react';
 import { Transaction, User as UserType } from './types';
 import {
@@ -34,6 +34,10 @@ const App: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [loginForm, setLoginForm] = useState({ name: '', password: '' });
     const [isLoading, setIsLoading] = useState(true);
+    const [darkMode, setDarkMode] = useState(() => {
+        const saved = localStorage.getItem('kardex_theme');
+        return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Initial load from Supabase
@@ -101,6 +105,17 @@ const App: React.FC = () => {
             window.removeEventListener('navigate-to-dashboard', handleNavigateToDashboard);
         };
     }, []);
+
+    // Effect for Dark Mode
+    useEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('kardex_theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('kardex_theme', 'light');
+        }
+    }, [darkMode]);
 
     // Use custom hook for stock calculations
     const { stockItems, criticalItems, stats, timeFilter, setTimeFilter } = useStockCalculation(transactions);
@@ -350,6 +365,13 @@ const App: React.FC = () => {
                     <img src="/logo.png" alt="Nano Pro" className="h-10 lg:h-12 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
                 </div>
                 <div className="flex items-center gap-2 lg:gap-4">
+                    <button
+                        onClick={() => setDarkMode(!darkMode)}
+                        className="p-2 text-white/70 hover:text-white transition-colors"
+                        title={darkMode ? 'Modo Claro' : 'Modo Escuro'}
+                    >
+                        {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                    </button>
                     <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest hidden sm:block">USUÁRIO NANO</span>
                     <span className="text-xs lg:text-sm text-white font-bold truncate max-w-[100px] lg:max-w-none">{currentUser.name}</span>
                     <div className="w-7 h-7 lg:w-8 lg:h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-black text-xs lg:text-sm flex-shrink-0">
@@ -362,7 +384,7 @@ const App: React.FC = () => {
             </header>
 
             {/* SIDEBAR - Branca */}
-            <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-slate-200 fixed top-14 h-[calc(100vh-56px)] z-30">
+            <aside className="hidden lg:flex flex-col w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 fixed top-14 h-[calc(100vh-56px)] z-30">
                 {/* Header com KARDEX em Card */}
                 <div className="px-4 pt-5 pb-4">
                     <div className="bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl p-4 shadow-lg shadow-primary-600/20">
@@ -373,27 +395,27 @@ const App: React.FC = () => {
 
                 {/* Menu de navegação */}
                 <nav className="flex-1 px-4 space-y-1">
-                    <button onClick={() => setView('DASHBOARD')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'DASHBOARD' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                    <button onClick={() => setView('DASHBOARD')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'DASHBOARD' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                         <Menu size={18} /> DASHBOARD
                     </button>
-                    <button onClick={() => setView('STOCK')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'STOCK' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                    <button onClick={() => setView('STOCK')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'STOCK' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                         <BarChart3 size={18} /> SALDO EM ESTOQUE
                     </button>
-                    <button onClick={() => setView('HISTORY')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'HISTORY' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                    <button onClick={() => setView('HISTORY')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'HISTORY' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                         <History size={18} /> HISTÓRICO
                     </button>
-                    <button onClick={() => { setEditingTransaction(null); setPrefillData(undefined); setView('NEW'); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'NEW' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                    <button onClick={() => { setEditingTransaction(null); setPrefillData(undefined); setView('NEW'); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'NEW' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                         <PlusCircle size={18} /> NOVO LANÇAMENTO
                     </button>
-                    <button onClick={() => setView('INVENTORY')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'INVENTORY' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                    <button onClick={() => setView('INVENTORY')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'INVENTORY' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                         <ClipboardList size={18} /> INVENTÁRIOS
                     </button>
                 </nav>
 
                 {/* Configuração separada no rodapé */}
                 {currentUser?.profile === 'ADMIN' && (
-                    <div className="px-4 py-4 border-t border-slate-100">
-                        <button onClick={() => setView('SETTINGS')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'SETTINGS' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+                    <div className="px-4 py-4 border-t border-slate-100 dark:border-slate-800">
+                        <button onClick={() => setView('SETTINGS')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all ${view === 'SETTINGS' ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                             <SettingsIcon size={18} /> CONFIGURAÇÃO
                         </button>
                     </div>
@@ -444,7 +466,7 @@ const App: React.FC = () => {
             )}
 
             {/* Main Content */}
-            <main className="flex-1 lg:ml-60 mt-14 lg:mt-14 p-4 lg:p-8 pb-24 lg:pb-8 bg-slate-50 min-h-[calc(100vh-56px)]">
+            <main className="flex-1 lg:ml-60 mt-14 lg:mt-14 p-4 lg:p-8 pb-24 lg:pb-8 bg-slate-50 dark:bg-slate-950 min-h-[calc(100vh-56px)]">
                 {view === 'DASHBOARD' && (
                     <div className="space-y-6">
                         <StatsCards stats={stats} timeFilter={timeFilter} setTimeFilter={setTimeFilter} />
