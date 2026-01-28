@@ -260,8 +260,8 @@ export const lockSession = async (sessionId: string, userName: string): Promise<
 
     if (updateError) throw updateError;
     return { success: true };
-  } catch (err) {
-    console.error('Lock session failed:', err);
+  } catch (err: any) {
+    console.error('Lock session failed:', err.message || err);
     return { success: false };
   }
 };
@@ -335,8 +335,8 @@ export const loadUsers = async (): Promise<User[]> => {
       active: u.active,
       lastLogin: u.last_login
     }));
-  } catch (err) {
-    console.error('Load users failed:', err);
+  } catch (err: any) {
+    console.error('Load users failed:', err.message || err);
     return [{ id: 'admin-01', name: 'Administrador', login: 'admin', password: '!12dfe13dfe', profile: 'ADMIN', active: true, lastLogin: Date.now() }];
   }
 };
@@ -620,6 +620,41 @@ export const subscribeToTransactions = (onUpdate: () => void): (() => void) => {
     });
 
   // Retorna função de cleanup
+  return () => {
+    supabase.removeChannel(channel);
+  };
+};
+
+export const broadcastLogoutAll = async (): Promise<void> => {
+  if (!isSupabaseConfigured()) return;
+
+  const channel = supabase.channel('system-commands');
+  await channel.subscribe(async (status) => {
+    if (status === 'SUBSCRIBED') {
+      await channel.send({
+        type: 'broadcast',
+        event: 'logout-all',
+        payload: { timestamp: Date.now() }
+      });
+      console.log('📣 Comando de Logout Global enviado');
+    }
+  });
+
+  // Aguarda um pouco e remove o canal
+  setTimeout(() => supabase.removeChannel(channel), 5000);
+};
+
+export const subscribeToSystemCommands = (onLogout: () => void): (() => void) => {
+  if (!isSupabaseConfigured()) return () => { };
+
+  const channel = supabase
+    .channel('system-commands')
+    .on('broadcast', { event: 'logout-all' }, () => {
+      console.log('🚨 Comando de Logout Global recebido!');
+      onLogout();
+    })
+    .subscribe();
+
   return () => {
     supabase.removeChannel(channel);
   };

@@ -8,7 +8,7 @@ import {
     loadTransactions, saveTransaction, saveTransactions, deleteTransaction, loadUsers, saveUsers,
     wipeTransactions, importBackupFromFile, exportBackupToFile, scheduleAutoBackup, subscribeToTransactions,
     createManualBackup, getBackups, restoreFromCloud, loadInventorySessions, saveInventorySessions,
-    unlockAllSessions
+    unlockAllSessions, broadcastLogoutAll, subscribeToSystemCommands
 } from './services/storage';
 import { importFromExcel, exportToExcel, downloadTemplate } from './services/excel';
 import { useStockCalculation } from './hooks/useStockCalculation';
@@ -100,9 +100,18 @@ const App: React.FC = () => {
         const handleNavigateToDashboard = () => setView('DASHBOARD');
         window.addEventListener('navigate-to-dashboard', handleNavigateToDashboard);
 
+        const handleBroadcastLogout = () => {
+            setCurrentUser(null);
+            localStorage.removeItem('loggedUser');
+            window.location.reload();
+        };
+
+        const unsubscribeSys = subscribeToSystemCommands(handleBroadcastLogout);
+
         // Cleanup ao desmontar componente
         return () => {
             unsubscribe();
+            unsubscribeSys();
             window.removeEventListener('navigate-to-dashboard', handleNavigateToDashboard);
         };
     }, []);
@@ -256,8 +265,23 @@ const App: React.FC = () => {
         }
     };
 
+    const handleLogoutAll = async () => {
+        if (confirm('Deseja realmente deslogar todos os usuários ativos no sistema?')) {
+            try {
+                await broadcastLogoutAll();
+                alert('Comando de logout enviado para todos os terminais.');
+            } catch (err) {
+                alert('Erro ao enviar comando de logout.');
+            }
+        }
+    };
+
     const handleExportBackup = async () => {
         await exportBackupToFile();
+    };
+
+    const handleFetchBackups = async () => {
+        return await getBackups();
     };
 
     const handleManualBackup = async () => {
@@ -538,6 +562,7 @@ const App: React.FC = () => {
                         onCloudRestore={handleCloudRestore}
                         onFetchBackups={getBackups}
                         onUnlockAllSessions={handleUnlockAllSessions}
+                        onLogoutAll={handleLogoutAll}
                     />
                 )}
             </main>

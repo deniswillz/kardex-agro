@@ -173,7 +173,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const img = new Image();
+        const img = document.createElement('img');
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
@@ -516,7 +516,6 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
             />
           </div>
         )}
-
         {/* RESPONSIBLE AND DATE */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>

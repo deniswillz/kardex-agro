@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   Users, ShieldAlert, Database, Download, Upload, Trash2,
   UserPlus, Shield, ToggleLeft, ToggleRight,
-  AlertTriangle, RefreshCcw, FileSpreadsheet, FileJson, Lock, Cloud, X
+  AlertTriangle, RefreshCcw, FileSpreadsheet, FileJson, Lock, Cloud, X, LogOut
 } from 'lucide-react';
 import { User, UserProfile, Transaction } from '../types';
 
@@ -15,14 +15,14 @@ interface SettingsProps {
   onExportKardex: () => void;
   onExportBackup: () => void;
   onCloudRestore: (backupId: string) => void;
-  onFetchBackups: () => Promise<any[]>;
   onUnlockAllSessions: () => void;
+  onLogoutAll: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
   users, onSaveUsers, onWipeData, onImportBackup,
   onImportExcel, onExportKardex, onExportBackup, onManualBackup, onCloudRestore, onFetchBackups,
-  onUnlockAllSessions
+  onUnlockAllSessions, onLogoutAll
 }) => {
   const [activeTab, setActiveTab] = useState<'USERS' | 'MAINTENANCE' | 'DATA'>('USERS');
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -304,14 +304,26 @@ export const Settings: React.FC<SettingsProps> = ({
                   </div>
                 </div>
                 <button
-                  onClick={() => {
-                    if (confirm('Deseja liberar o acesso a todas as sessões de inventário bloqueadas por outros usuários?')) {
-                      onUnlockAllSessions();
-                    }
-                  }}
+                  onClick={onUnlockAllSessions}
                   className="px-6 py-2 border border-amber-200 text-amber-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-amber-500 hover:text-white transition-all"
                 >
                   Liberar Tudo
+                </button>
+              </div>
+
+              <div className="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between group hover:border-red-600 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-red-50 text-red-500 rounded-xl group-hover:bg-red-600 group-hover:text-white transition-all"><LogOut size={24} /></div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">Deslogar Todos os Usuários</h4>
+                    <p className="text-xs text-slate-400">Força o logout imediato de todos os terminais ativos</p>
+                  </div>
+                </div>
+                <button
+                  onClick={onLogoutAll}
+                  className="px-6 py-2 border border-red-200 text-red-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-red-600 hover:text-white transition-all"
+                >
+                  Deslogar Todos
                 </button>
               </div>
             </div>
@@ -341,7 +353,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Senha de Acesso</label>
                   <div className="relative">
-                    <input name="password" type="password" defaultValue={editingUser.password} placeholder="••••••••" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold outline-none focus:border-primary-500" />
+                    <input name="password" type="password" defaultValue={editingUser.password} placeholder="••••••••" required autoComplete="current-password" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold outline-none focus:border-primary-500" />
                     <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
