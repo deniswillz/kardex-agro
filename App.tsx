@@ -35,6 +35,7 @@ const App: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [loginForm, setLoginForm] = useState({ name: '', password: '' });
     const [isLoading, setIsLoading] = useState(true);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [darkMode, setDarkMode] = useState(() => {
         const saved = localStorage.getItem('kardex_theme');
         return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -133,17 +134,22 @@ const App: React.FC = () => {
     // Login handler
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        const user = users.find(u => u.login === loginForm.name && u.password === loginForm.password && u.active);
-        if (user) {
-            const loggedUser = { ...user, lastLogin: Date.now() };
-            setCurrentUser(loggedUser);
-            // Salvar sessão no localStorage
-            localStorage.setItem('kardex_session', JSON.stringify(loggedUser));
-            const updatedUsers = users.map(u => u.id === user.id ? { ...u, lastLogin: Date.now() } : u);
-            setUsers(updatedUsers);
-            await saveUsers(updatedUsers);
-        } else {
-            alert('Login ou senha inválidos!');
+        setIsProcessing(true);
+        try {
+            const user = users.find(u => u.login === loginForm.name && u.password === loginForm.password && u.active);
+            if (user) {
+                const loggedUser = { ...user, lastLogin: Date.now() };
+                setCurrentUser(loggedUser);
+                // Salvar sessão no localStorage
+                localStorage.setItem('kardex_session', JSON.stringify(loggedUser));
+                const updatedUsers = users.map(u => u.id === user.id ? { ...u, lastLogin: Date.now() } : u);
+                setUsers(updatedUsers);
+                await saveUsers(updatedUsers);
+            } else {
+                alert('Login ou senha inválidos!');
+            }
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -151,65 +157,87 @@ const App: React.FC = () => {
     const MAIN_WAREHOUSES = ['01', '20', '22'];
 
     const handleAddTransaction = async (data: Omit<Transaction, 'id' | 'timestamp'>) => {
-        const newTx: Transaction = {
-            ...data,
-            id: crypto.randomUUID(),
-            timestamp: Date.now()
-        };
-
-        let updated = [...transactions, newTx];
-        await saveTransaction(newTx);
-
-        // Se for SAIDA com destino para armazém principal (01, 20, 22), criar ENTRADA automática
-        if (data.type === 'SAIDA' && data.destinationWarehouse && MAIN_WAREHOUSES.includes(data.destinationWarehouse)) {
-            const entryTx: Transaction = {
+        setIsProcessing(true);
+        try {
+            const newTx: Transaction = {
+                ...data,
                 id: crypto.randomUUID(),
-                timestamp: Date.now(),
-                date: data.date,
-                code: data.code,
-                name: data.name,
-                type: 'ENTRADA',
-                operationType: 'MOVIMENTACAO',
-                quantity: data.quantity,
-                unit: data.unit,
-                minStock: data.minStock || 0,
-                warehouse: data.destinationWarehouse, // Armazém de entrada é o destino
-                address: data.destAddress || 'UNICO',
-                responsible: data.responsible,
-                photos: []
+                timestamp: Date.now()
             };
-            updated = [...updated, entryTx];
-            await saveTransaction(entryTx);
-        }
 
-        // Sincronizar com banco após salvar
-        await refreshData();
-        setView('HISTORY');
-        setPrefillData(undefined);
+            let updated = [...transactions, newTx];
+            await saveTransaction(newTx);
+
+            // Se for SAIDA com destino para armazém principal (01, 20, 22), criar ENTRADA automática
+            if (data.type === 'SAIDA' && data.destinationWarehouse && MAIN_WAREHOUSES.includes(data.destinationWarehouse)) {
+                const entryTx: Transaction = {
+                    id: crypto.randomUUID(),
+                    timestamp: Date.now(),
+                    date: data.date,
+                    code: data.code,
+                    name: data.name,
+                    type: 'ENTRADA',
+                    operationType: 'MOVIMENTACAO',
+                    quantity: data.quantity,
+                    unit: data.unit,
+                    minStock: data.minStock || 0,
+                    warehouse: data.destinationWarehouse, // Armazém de entrada é o destino
+                    address: data.destAddress || 'UNICO',
+                    responsible: data.responsible,
+                    photos: []
+                };
+                updated = [...updated, entryTx];
+                await saveTransaction(entryTx);
+            }
+
+            // Sincronizar com banco após salvar
+            await refreshData();
+            setView('HISTORY');
+            setPrefillData(undefined);
+        } catch (err) {
+            console.error('Error adding transaction:', err);
+            alert('Erro ao salvar movimentação.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleUpdateTransaction = async (id: string, data: Omit<Transaction, 'id' | 'timestamp'>) => {
-        const existingTx = transactions.find(t => t.id === id);
-        if (!existingTx) return;
+        setIsProcessing(true);
+        try {
+            const existingTx = transactions.find(t => t.id === id);
+            if (!existingTx) return;
 
-        const updatedTx: Transaction = {
-            ...existingTx,
-            ...data,
-            updatedAt: Date.now(),
-            updatedBy: currentUser?.name
-        };
-        const updated = transactions.map(t => t.id === id ? updatedTx : t);
-        await saveTransaction(updatedTx);
-        // Sincronizar com banco após salvar
-        await refreshData();
-        setEditingTransaction(null);
-        setView('HISTORY');
+            const updatedTx: Transaction = {
+                ...existingTx,
+                ...data,
+                updatedAt: Date.now(),
+                updatedBy: currentUser?.name
+            };
+            await saveTransaction(updatedTx);
+            // Sincronizar com banco após salvar
+            await refreshData();
+            setEditingTransaction(null);
+            setView('HISTORY');
+        } catch (err) {
+            console.error('Error updating transaction:', err);
+            alert('Erro ao atualizar movimentação.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleDeleteTransaction = async (id: string) => {
-        await deleteTransaction(id);
-        // Sincronizar com banco após deletar
-        await refreshData();
+        if (!confirm('Deseja excluir este registro permanentemente?')) return;
+        setIsProcessing(true);
+        try {
+            await deleteTransaction(id);
+            await refreshData();
+        } catch (err) {
+            alert('Erro ao excluir registro.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleEditTransaction = (tx: Transaction) => {
@@ -225,14 +253,18 @@ const App: React.FC = () => {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setIsProcessing(true);
             try {
                 const imported = await importFromExcel(file);
                 const updated = [...transactions, ...imported];
                 setTransactions(updated);
                 await saveTransactions(updated);
                 alert(`${imported.length} registros importados com sucesso!`);
+                await refreshData();
             } catch (err) {
                 alert('Erro ao importar arquivo. Verifique o formato.');
+            } finally {
+                setIsProcessing(false);
             }
         }
         if (e.target) e.target.value = '';
@@ -240,8 +272,14 @@ const App: React.FC = () => {
 
     // Settings handlers
     const handleWipeData = async () => {
-        await wipeTransactions();
-        setTransactions([]);
+        if (!confirm('ATENÇÃO: Isso apagará TODOS os dados de movimentação. Continuar?')) return;
+        setIsProcessing(true);
+        try {
+            await wipeTransactions();
+            setTransactions([]);
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleImportBackup = async (json: string) => {
@@ -501,7 +539,7 @@ const App: React.FC = () => {
             )}
 
             {/* Main Content */}
-            <main className="flex-1 lg:ml-60 mt-14 lg:mt-14 p-4 lg:p-8 pb-24 lg:pb-8 bg-slate-50 dark:bg-slate-950 min-h-[calc(100vh-56px)]">
+            <main className="flex-1 lg:ml-60 mt-[92px] lg:mt-14 p-4 lg:p-8 pb-24 lg:pb-8 bg-slate-50 dark:bg-slate-950 min-h-[calc(100vh-56px)]">
                 {view === 'DASHBOARD' && (
                     <div className="space-y-6">
                         <StatsCards stats={stats} timeFilter={timeFilter} setTimeFilter={setTimeFilter} />
@@ -599,6 +637,21 @@ const App: React.FC = () => {
                     <span className="text-[9px] font-bold uppercase">Inventário</span>
                 </button>
             </nav>
+
+            {/* Global Loader Overlay */}
+            {isProcessing && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[200] flex items-center justify-center animate-fade-in">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-2xl flex flex-col items-center gap-4 animate-slide-up">
+                        <div className="relative">
+                            <div className="w-12 h-12 border-4 border-primary-100 dark:border-slate-800 rounded-full animate-spin border-t-primary-600"></div>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Sincronizando</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Aguarde um momento...</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
