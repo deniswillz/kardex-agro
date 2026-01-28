@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, QrCode, X, Save, ArrowLeft, User, Calendar, MapPin, Hash, Package, AlertCircle, ArrowRightLeft, Send, LogOut, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Camera, QrCode, X, Save, ArrowLeft, User, Calendar, MapPin, Hash, Package, AlertCircle, ArrowRightLeft, Send, LogOut, AlertTriangle, CheckCircle, Lock } from 'lucide-react';
 import { Transaction, MovementType, OperationType, WAREHOUSES, User as UserType } from '../types';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 

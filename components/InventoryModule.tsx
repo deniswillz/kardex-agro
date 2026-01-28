@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ClipboardList, Plus, Search, Calendar, User as UserIcon, AlertCircle, Clock, ArrowRight, Trash2, TrendingUp, BarChart } from 'lucide-react';
+import { ClipboardList, Plus, Search, Calendar, User as UserIcon, AlertCircle, Clock, ArrowRight, Trash2, TrendingUp, BarChart, Lock } from 'lucide-react';
 import { InventorySession, User } from '../types';
 import { loadInventorySessions, saveInventorySessions, deleteInventorySession, lockSession, unlockSession } from '../services/storage';
 import { importInventoryFromExcel } from '../services/excel';
