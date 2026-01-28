@@ -30,14 +30,28 @@ export const InventorySessionExecution: React.FC<InventorySessionExecutionProps>
   // Libera bloqueio ao fechar aba/navegador ou desmontar
   useEffect(() => {
     if (isFinalized) return;
-    const handleUnload = () => {
-      // O Supabase Realtime ou o TTL de 10 min cuidará disso se o beacon falhar
+
+    // Função para desbloqueio (usada no unmount e beforeunload)
+    const unlock = () => {
+      if (session.id) {
+        // Usamos uma estratégia de "fire and forget" para o unmount
+        // Para o beforeunload, navegadores modernos podem cancelar o fetch, 
+        // mas o Supabase costuma conseguir disparar a tempo em conexões rápidas.
+        import('../services/storage').then(m => m.unlockSession(session.id));
+      }
     };
+
+    const handleUnload = () => {
+      unlock();
+    };
+
     window.addEventListener('beforeunload', handleUnload);
+
     return () => {
       window.removeEventListener('beforeunload', handleUnload);
+      unlock(); // Desbloqueia ao sair da tela (SPA navigation)
     };
-  }, [isFinalized]);
+  }, [isFinalized, session.id]);
 
   const handleUpdateCount = (itemId: string, val: string) => {
     if (isFinalized) return;
