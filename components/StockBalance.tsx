@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Transaction, InventoryItem, WAREHOUSES } from '../types';
-import { Search, Package, ArrowRight, AlertTriangle, MapPin, Edit3, Save, X, ArrowUpCircle, ArrowDownCircle, ClipboardList, MoveHorizontal, PackageSearch, Clock, Calendar, Camera } from 'lucide-react';
+import { Search, Package, ArrowRight, AlertTriangle, MapPin, Edit3, Save, X, ArrowUpCircle, ArrowDownCircle, ClipboardList, MoveHorizontal, PackageSearch, Clock, Calendar, Camera, Plus, Trash2 } from 'lucide-react';
 import { saveTransaction } from '../services/storage';
 
 interface StockBalanceProps {
@@ -16,10 +16,13 @@ interface ProductDetailsPopupProps {
   item: InventoryItem;
   transactions: Transaction[];
   onClose: () => void;
+  onUpdateTransactions: (transactions: Transaction[]) => void;
 }
 
-const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transactions, onClose }) => {
+const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transactions, onClose, onUpdateTransactions }) => {
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Get all unique photos for this product from history
   const productPhotos = useMemo(() => {
@@ -29,6 +32,60 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transac
       .forEach(t => t.photos.forEach(p => photosSet.add(p)));
     return Array.from(photosSet);
   }, [item.code, transactions]);
+
+  const handleAddPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+
+        // Create a new CONTAGEM transaction with the photo to save it in product history
+        const newTx: Transaction = {
+          id: crypto.randomUUID(),
+          date: new Date().toISOString().split('T')[0],
+          code: item.code,
+          name: item.name,
+          type: 'ENTRADA', // Neutral type for count
+          operationType: 'CONTAGEM',
+          quantity: item.balance, // Keep current balance
+          unit: item.unit,
+          minStock: item.minStock,
+          warehouse: item.warehouse,
+          address: item.address,
+          responsible: 'Sistema (Foto)',
+          photos: [base64String],
+          timestamp: Date.now()
+        };
+
+        const updated = [...transactions, newTx];
+        onUpdateTransactions(updated);
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error adding photo:', error);
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeletePhoto = (photoToDelete: string) => {
+    if (confirm('Deseja realmente apagar esta foto?')) {
+      const updated = transactions.map(t => {
+        if (t.code === item.code && t.photos && t.photos.includes(photoToDelete)) {
+          return {
+            ...t,
+            photos: t.photos.filter(p => p !== photoToDelete)
+          };
+        }
+        return t;
+      });
+      onUpdateTransactions(updated);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-fade-in">
@@ -47,20 +104,20 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transac
         {/* Content */}
         <div className="p-6 overflow-y-auto no-scrollbar space-y-6">
           {/* Info Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo Total</p>
-              <p className="text-lg font-black text-slate-900">{item.balance} <span className="text-xs">{item.unit}</span></p>
+              <p className="text-lg font-black text-slate-900 break-words">{item.balance} <span className="text-xs uppercase">{item.unit}</span></p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Localização</p>
-              <p className="text-xs font-black text-slate-900 uppercase">{item.warehouse} - {item.address || 'Geral'}</p>
+              <p className="text-xs font-black text-slate-900 uppercase break-words leading-tight">{item.warehouse} - {item.address || 'Geral'}</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Estoque Mín.</p>
               <p className="text-lg font-black text-slate-900">{item.minStock || 0}</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Últ. Contagem</p>
               <p className="text-xs font-black text-slate-900">{item.lastCount ? new Date(item.lastCount).toLocaleDateString() : '--'}</p>
             </div>
@@ -68,18 +125,40 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transac
 
           {/* Photos Section */}
           <div>
-            <h4 className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
-              <Camera size={14} /> Galeria de Fotos
-            </h4>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                <Camera size={14} /> Galeria de Fotos
+              </h4>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="flex items-center gap-2 px-3 py-1.5 bg-primary-50 text-primary-600 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-primary-100 transition-all disabled:opacity-50"
+              >
+                {isUploading ? 'Subindo...' : <><Plus size={14} /> Adicionar</>}
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleAddPhoto}
+                accept="image/*"
+                className="hidden"
+              />
+            </div>
+
             {productPhotos.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pb-4">
                 {productPhotos.map((photo, idx) => (
                   <div
                     key={idx}
-                    onClick={() => setExpandedPhoto(photo)}
-                    className="aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 cursor-pointer hover:border-primary-500 transition-all shadow-sm"
+                    className="aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 cursor-pointer hover:border-primary-500 transition-all shadow-sm group relative"
                   >
-                    <img src={photo} alt={`Produto ${idx}`} className="w-full h-full object-cover" />
+                    <img src={photo} alt={`Produto ${idx}`} className="w-full h-full object-cover" onClick={() => setExpandedPhoto(photo)} />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeletePhoto(photo); }}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -345,8 +424,8 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
                   >
                     <Package size={18} />
                   </button>
-                  <div>
-                    <h4 className={`text-xs font-black uppercase leading-none mb-1 ${item.isCritical ? 'text-red-700' : 'text-slate-800'}`}>{item.name}</h4>
+                  <div className="flex-1 min-w-0">
+                    <h4 className={`text-xs font-black uppercase leading-tight mb-1 break-words line-clamp-2 ${item.isCritical ? 'text-red-700' : 'text-slate-800'}`}>{item.name}</h4>
                     <span className="text-[10px] font-mono text-slate-400 tracking-tighter uppercase">{item.code}</span>
                   </div>
                 </div>
@@ -416,6 +495,7 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
           item={selectedProduct}
           transactions={transactions}
           onClose={() => setSelectedProduct(null)}
+          onUpdateTransactions={onUpdateTransactions}
         />
       )}
     </div>
