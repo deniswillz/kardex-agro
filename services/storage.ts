@@ -3,24 +3,28 @@ import { supabase, isSupabaseConfigured } from './supabase';
 
 // ============ TRANSACTIONS (Supabase Only) ============
 
-export const loadTransactions = async (): Promise<Transaction[]> => {
+export const loadTransactions = async (includePhotos: boolean = true): Promise<Transaction[]> => {
   if (!isSupabaseConfigured()) {
     console.warn('Supabase not configured');
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    // Se incluir fotos, ainda assim limitamos para evitar payloads gigantes que travam o Supabase
+    // A maioria das transações antigas não precisa da foto carregada o tempo todo
+    const query = supabase
       .from('transactions')
-      .select('*')
+      .select(includePhotos ? '*' : 'id, date, code, name, type, operation_type, quantity, unit, min_stock, warehouse, destination_warehouse, destination_address, address, responsible, timestamp, updated_at, updated_by')
       .order('timestamp', { ascending: false });
+
+    // Limitamos a 5000 registros para evitar timeout (57014)
+    const { data, error } = await query.limit(5000);
 
     if (error) {
       console.error('Load transactions error:', error);
       return [];
     }
 
-    // Convert snake_case to camelCase
     return data?.map(t => ({
       id: t.id,
       date: t.date,

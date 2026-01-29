@@ -42,6 +42,7 @@ const App: React.FC = () => {
         return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
     });
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Initial load from Supabase
     useEffect(() => {
@@ -83,11 +84,24 @@ const App: React.FC = () => {
     }, []);
 
     // Função para recarregar dados do Supabase (sincronização)
-    const refreshData = async () => {
+    const refreshData = async (includePhotos: boolean = false) => {
         setIsRefreshing(true);
         try {
-            const freshTransactions = await loadTransactions();
-            setTransactions(freshTransactions);
+            const freshTransactions = await loadTransactions(includePhotos);
+
+            setTransactions(prev => {
+                // Se não buscamos fotos, preservamos as que já temos localmente
+                if (!includePhotos) {
+                    return freshTransactions.map(t => {
+                        const existing = prev.find(p => p.id === t.id);
+                        if (existing && existing.photos && existing.photos.length > 0) {
+                            return { ...t, photos: existing.photos };
+                        }
+                        return t;
+                    });
+                }
+                return freshTransactions;
+            });
         } catch (err) {
             console.error('Erro ao sincronizar dados:', err);
         } finally {
@@ -99,7 +113,10 @@ const App: React.FC = () => {
     useEffect(() => {
         const unsubscribe = subscribeToTransactions(() => {
             console.log('Recebendo atualização em tempo real...');
-            refreshData();
+            if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+            refreshTimerRef.current = setTimeout(() => {
+                refreshData(false); // Sincronização em tempo real não traz fotos por padrão para economizar banda/tempo
+            }, 1000);
         });
 
         const handleNavigateToDashboard = () => setView('DASHBOARD');
