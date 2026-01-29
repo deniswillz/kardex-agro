@@ -15,10 +15,10 @@ interface ProductDetailModalProps {
     };
     onClose: () => void;
     onSaveMinStock: (code: string, newMin: number) => Promise<void>;
-    onAddPhotos: (code: string, photos: string[]) => Promise<void>;
+    onUpdatePhotos: (code: string, photos: string[]) => Promise<void>;
 }
 
-export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClose, onSaveMinStock, onAddPhotos }) => {
+export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClose, onSaveMinStock, onUpdatePhotos }) => {
     const [minStock, setMinStock] = useState(product.minStock);
     const [isSaving, setIsSaving] = useState(false);
     const [photos, setPhotos] = useState<string[]>(product.photos || []);
@@ -79,8 +79,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
             }
 
             if (newPhotos.length > 0) {
-                await onAddPhotos(product.code, newPhotos);
-                setPhotos(prev => [...newPhotos, ...prev]);
+                const updatedList = [...newPhotos, ...photos];
+                await onUpdatePhotos(product.code, updatedList);
+                setPhotos(updatedList);
             }
         } catch (err) {
             console.error('Erro ao processar fotos:', err);
@@ -88,6 +89,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handleDeletePhoto = async (idx: number) => {
+        if (!confirm('Deseja excluir esta imagem?')) return;
+
+        const updatedList = photos.filter((_, i) => i !== idx);
+        try {
+            await onUpdatePhotos(product.code, updatedList);
+            setPhotos(updatedList);
+        } catch (err) {
+            console.error('Erro ao excluir foto:', err);
         }
     };
 
@@ -193,6 +206,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                                             <ImageIcon size={16} className="text-white" />
                                         </div>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDeletePhoto(idx); }}
+                                            className="absolute top-1.5 right-1.5 p-1.5 bg-red-500/80 hover:bg-red-600 text-white rounded-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all z-10"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
                                     </div>
                                 ))}
                             </div>

@@ -67,13 +67,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
 
   const isLoading = !mounted || dimensions.width === 0;
 
-  if (isLoading) return <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 h-[500px] animate-pulse flex items-center justify-center text-slate-400 font-bold uppercase text-[10px] tracking-widest">Calculando dimensões...</div>;
-
   return (
     <div
       ref={containerRef}
-      className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 animate-fade-in relative overflow-hidden"
+      className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 animate-fade-in relative overflow-hidden min-h-[500px]"
     >
+      {isLoading ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm z-10 text-slate-400 font-bold uppercase text-[10px] tracking-widest animate-pulse">
+          Calculando dimensões...
+        </div>
+      ) : null}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h3 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Frequência Operacional (01, 20, 22)</h3>

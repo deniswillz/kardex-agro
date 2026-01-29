@@ -49,9 +49,16 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
         map[key].minStock = t.minStock || 0;
         map[key].lastCount = t.date;
         if (t.photos && t.photos.length > 0) {
-          // Para transações normais, mantém as fotos
-          // Para transações de SISTEMA, elas servem apenas para atualizar os metadados (fotos)
-          map[key].photos = [...(t.photos || []), ...(map[key].photos || [])].slice(0, 10);
+          // Se for SISTEMA (transação silenciosa de metadados), ela redefine o array de fotos (sobrescreve)
+          // Isso permite a exclusão e ordenação. Se for normal, mescla com as existentes.
+          if (t.quantity === 0 && t.responsible === 'SISTEMA') {
+            map[key].photos = t.photos;
+          } else {
+            // Mescla apenas se as fotos novas ainda não estiverem presentes
+            const currentPhotos = map[key].photos || [];
+            const newPhotos = t.photos.filter(p => !currentPhotos.includes(p));
+            map[key].photos = [...newPhotos, ...currentPhotos].slice(0, 10);
+          }
         }
       }
 
@@ -355,7 +362,7 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           onSaveMinStock={handleSaveMin}
-          onAddPhotos={handleAddPhotos}
+          onUpdatePhotos={handleAddPhotos}
         />
       )}
     </div>

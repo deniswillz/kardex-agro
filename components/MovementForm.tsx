@@ -357,9 +357,8 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           </div>
         </div>
 
-        {/* DESCRIPTION & PREVIEW */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
-          <div className="md:col-span-3">
+        <div className="grid grid-cols-1 gap-4 items-start">
+          <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Descrição Técnica *</label>
             <input
               type="text"
@@ -368,21 +367,6 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
               className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3.5 text-sm font-bold text-slate-700 outline-none focus:border-primary-500 focus:bg-white transition-all uppercase"
               required
             />
-          </div>
-          <div className="flex gap-2 h-full items-end">
-            {photos.map((photo, idx) => (
-              <div key={idx} className="w-14 h-14 rounded-xl border-2 border-slate-100 overflow-hidden shadow-sm relative group cursor-pointer" onClick={() => setViewerIndex(idx)}>
-                <img src={photo} className="w-full h-full object-cover" alt="Preview" />
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Send size={12} className="text-white rotate-[-45deg]" />
-                </div>
-              </div>
-            ))}
-            {photos.length === 0 && (
-              <div className="w-14 h-14 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 bg-slate-50/50">
-                <ImageIcon size={20} />
-              </div>
-            )}
           </div>
         </div>
 
