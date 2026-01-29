@@ -301,10 +301,16 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
 
   const handleSaveMin = async () => {
     if (editingCode !== null) {
-      const updated = transactions.map(t =>
-        t.code === editingCode ? { ...t, minStock: tempMin } : t
-      );
-      onUpdateTransactions(updated);
+      const changed: Transaction[] = [];
+      const updated = transactions.map(t => {
+        if (t.code === editingCode) {
+          const mod = { ...t, minStock: tempMin };
+          changed.push(mod);
+          return mod;
+        }
+        return t;
+      });
+      onUpdateTransactions(updated, changed);
       setEditingCode(null);
     }
   };

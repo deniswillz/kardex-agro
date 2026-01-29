@@ -57,9 +57,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       </div>
 
       {/* Adicionada altura mínima e largura flexível para evitar warnings de renderização do Recharts */}
-      <div className="flex-1 w-full min-h-[350px] relative px-2 overflow-hidden">
+      <div className="flex-1 w-full min-h-[350px] relative px-2 overflow-hidden" style={{ minHeight: '350px' }}>
         {mounted && (
-          <ResponsiveContainer width="99%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" debounce={50}>
             <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
               <XAxis
