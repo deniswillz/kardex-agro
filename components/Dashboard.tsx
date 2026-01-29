@@ -36,7 +36,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
 
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 500);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!mounted) return <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-[500px] animate-fade-in" />;

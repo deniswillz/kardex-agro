@@ -3,12 +3,14 @@ import { Transaction, InventoryItem, WAREHOUSES } from '../types';
 import { Search, Package, ArrowRight, AlertTriangle, MapPin, Edit3, Save, X, ArrowUpCircle, ArrowDownCircle, ClipboardList, MoveHorizontal, PackageSearch, Clock, Calendar, Camera, Plus, Trash2 } from 'lucide-react';
 import { saveTransaction } from '../services/storage';
 import { formatLocalDate } from '../services/dateUtils';
+import { compressImage } from '../services/imageUtils';
 
 interface StockBalanceProps {
   stockItems: InventoryItem[];
   onQuickAction: (code: string, warehouse: string, address?: string) => void;
   transactions: Transaction[];
   onUpdateTransactions: (transactions: Transaction[], changedItems?: Transaction[]) => void;
+  isRefreshing?: boolean;
 }
 
 const MAIN_WAREHOUSES = ['01', '20', '22'];
@@ -42,7 +44,8 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transac
     try {
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64String = reader.result as string;
+        const base64Str = reader.result as string;
+        const compressed = await compressImage(base64Str, 800, 0.7);
 
         // Create a new CONTAGEM transaction with the photo to save it in product history
         const newTx: Transaction = {
@@ -58,7 +61,7 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transac
           warehouse: item.warehouse,
           address: item.address,
           responsible: 'Sistema (Foto)',
-          photos: [base64String],
+          photos: [compressed],
           timestamp: Date.now()
         };
 
@@ -192,7 +195,7 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transac
   );
 };
 
-export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickAction, transactions, onUpdateTransactions }) => {
+export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickAction, transactions, onUpdateTransactions, isRefreshing }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('ALL');
   const [editingCode, setEditingCode] = useState<string | null>(null);
@@ -313,15 +316,23 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full animate-fade-in">
       <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/30">
-        <div className="relative flex-1 max-w-lg">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="Pesquisar SKU ou Descrição Técnica..."
-            className="pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm w-full outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold shadow-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="relative flex-1 max-w-lg flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Pesquisar SKU ou Descrição Técnica..."
+              className="pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm w-full outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold shadow-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          {isRefreshing && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg shadow-sm border border-primary-100 animate-fade-in whitespace-nowrap">
+              <div className="w-2 h-2 border-2 border-primary-200 rounded-full animate-spin border-t-primary-600"></div>
+              <span className="text-[9px] font-black text-primary-600 uppercase tracking-tighter">Sincronizando...</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtrar Armazém:</span>

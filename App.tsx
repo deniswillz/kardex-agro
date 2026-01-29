@@ -36,6 +36,7 @@ const App: React.FC = () => {
     const [loginForm, setLoginForm] = useState({ name: '', password: '' });
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [darkMode, setDarkMode] = useState(() => {
         const saved = localStorage.getItem('kardex_theme');
         return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -83,11 +84,14 @@ const App: React.FC = () => {
 
     // Função para recarregar dados do Supabase (sincronização)
     const refreshData = async () => {
+        setIsRefreshing(true);
         try {
             const freshTransactions = await loadTransactions();
             setTransactions(freshTransactions);
         } catch (err) {
             console.error('Erro ao sincronizar dados:', err);
+        } finally {
+            setIsRefreshing(false);
         }
     };
 
@@ -436,6 +440,12 @@ const App: React.FC = () => {
             <header className="fixed top-0 left-0 right-0 h-14 bg-primary-600 z-50 flex items-center justify-between px-4 lg:px-6 shadow-md">
                 <div className="flex items-center gap-2 lg:gap-3">
                     <img src="/logo.png" alt="Nano Pro" className="h-10 lg:h-12 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+                    {isRefreshing && (
+                        <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg animate-fade-in border border-white/10 ml-2">
+                            <div className="w-3 h-3 border-2 border-white/20 rounded-full animate-spin border-t-white"></div>
+                            <span className="text-[10px] font-black text-white uppercase tracking-tighter">Sincronizando...</span>
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-2 lg:gap-4">
                     <button
@@ -567,6 +577,7 @@ const App: React.FC = () => {
                                 await saveTransactions(updated);
                             }
                         }}
+                        isRefreshing={isRefreshing}
                     />
                 )}
 
@@ -575,6 +586,7 @@ const App: React.FC = () => {
                         transactions={transactions}
                         onDelete={handleDeleteTransaction}
                         onEdit={handleEditTransaction}
+                        isRefreshing={isRefreshing}
                     />
                 )}
 

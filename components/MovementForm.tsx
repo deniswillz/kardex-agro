@@ -187,7 +187,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          const maxDim = 1024;
+          const maxDim = 800;
 
           if (width > height) {
             if (width > maxDim) {

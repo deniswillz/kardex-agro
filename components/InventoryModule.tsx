@@ -15,6 +15,7 @@ type TimeFilter = 7 | 15 | 30 | 90;
 
 export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser }) => {
   const [sessions, setSessions] = useState<InventorySession[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>(30);
@@ -25,8 +26,13 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
   // Carregamento inicial do Supabase
   useEffect(() => {
     const loadData = async () => {
-      const data = await loadInventorySessions();
-      setSessions(data);
+      setIsLoading(true);
+      try {
+        const data = await loadInventorySessions();
+        setSessions(data);
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadData();
   }, []);
@@ -118,6 +124,15 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({ currentUser })
         onBack={handleBackFromSession}
         onSave={handleSaveSession}
       />
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 text-slate-400 gap-4 animate-fade-in">
+        <div className="w-12 h-12 border-4 border-slate-100 rounded-full animate-spin border-t-primary-600"></div>
+        <p className="text-sm font-black uppercase tracking-widest italic">Carregando auditorias...</p>
+      </div>
     );
   }
 

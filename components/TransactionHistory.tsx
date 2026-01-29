@@ -8,11 +8,12 @@ interface TransactionHistoryProps {
   transactions: Transaction[];
   onDelete: (id: string) => void;
   onEdit: (transaction: Transaction) => void;
+  isRefreshing?: boolean;
 }
 
 const MAIN_WAREHOUSES = ['01', '20', '22'];
 
-export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transactions, onDelete, onEdit }) => {
+export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transactions, onDelete, onEdit, isRefreshing }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOp, setFilterOp] = useState<'ALL' | OperationType>('ALL');
   const [startDate, setStartDate] = useState('');
@@ -64,6 +65,12 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
               <span className="text-xs font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">
                 {filteredData.length}
               </span>
+              {isRefreshing && (
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded-lg shadow-sm border border-primary-100 animate-fade-in">
+                  <div className="w-2 h-2 border-2 border-primary-200 rounded-full animate-spin border-t-primary-600"></div>
+                  <span className="text-[8px] font-black text-primary-600 uppercase tracking-tighter">Sincronizando...</span>
+                </div>
+              )}
             </h2>
           </div>
 
