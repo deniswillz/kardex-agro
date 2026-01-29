@@ -10,20 +10,56 @@ export const loadTransactions = async (includePhotos: boolean = false): Promise<
   }
 
   try {
+    // Implementação híbrida: fotos para os últimos 100 registros (histórico visível), lite para o restante
     const query = supabase
       .from('transactions')
-      .select(includePhotos ? '*' : 'id, date, code, name, type, operation_type, quantity, unit, min_stock, warehouse, destination_warehouse, destination_address, address, responsible, timestamp, updated_at, updated_by')
+      .select('*')
       .order('timestamp', { ascending: false });
 
-    // Limitamos a 5000 registros para evitar timeout (57014)
-    const { data, error } = await query.limit(5000);
+    // Se estiver no modo lite, pegamos os primeiros 100 com tudo (incluindo fotos)
+    // e o restante (até 5000) sem fotos. Porém para simplificar e manter a performance,
+    // vamos pegar os primeiros 100 com fotos e o restante sem em uma única query se possível,
+    // ou apenas aceitar que as fotos dos 100 primeiros são o suficiente.
 
-    if (error) {
-      console.error('Load transactions error:', error);
+    // Decisão: Vamos pegar os primeiros 100 COM fotos, e se includePhotos for false, 
+    // os demais registros serão processados para remover as fotos do payload se necessário, 
+    // mas a query select('*') já é pesada.
+
+    // Melhor abordagem: se includePhotos for false, selecionamos as colunas lite para TODOS, 
+    // mas forçamos as fotos para os top 100 se possível.
+    // Como o Supabase não permite select condicional por linha facilmente, 
+    // faremos a query lite de 5000 e uma query full de 100.
+
+    const { data: liteData, error: liteError } = await supabase
+      .from('transactions')
+      .select(includePhotos ? '*' : 'id, date, code, name, type, operation_type, quantity, unit, min_stock, warehouse, destination_warehouse, destination_address, address, responsible, timestamp, updated_at, updated_by')
+      .order('timestamp', { ascending: false })
+      .limit(5000);
+
+    if (liteError) {
+      console.error('Load transactions error:', liteError);
       return [];
     }
 
-    return data?.map(t => ({
+    let finalData = liteData || [];
+
+    // Se for lite, buscamos as fotos dos top 100 para não quebrar o visual do histórico recente
+    if (!includePhotos && finalData.length > 0) {
+      const topIds = finalData.slice(0, 100).map(t => t.id);
+      const { data: photoData } = await supabase
+        .from('transactions')
+        .select('id, photos')
+        .in('id', topIds);
+
+      if (photoData) {
+        finalData = finalData.map(t => {
+          const pRow = photoData.find(pr => pr.id === t.id);
+          return pRow ? { ...t, photos: pRow.photos || [] } : t;
+        });
+      }
+    }
+
+    return finalData.map(t => ({
       id: t.id,
       date: t.date,
       code: t.code,

@@ -116,7 +116,7 @@ const App: React.FC = () => {
             if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
             refreshTimerRef.current = setTimeout(() => {
                 refreshData(false); // Sincronização em tempo real não traz fotos por padrão para economizar banda/tempo
-            }, 1000);
+            }, 3000); // Aumentado para 3s para evitar flood
         });
 
         const handleNavigateToDashboard = () => setView('DASHBOARD');

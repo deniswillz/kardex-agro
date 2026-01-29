@@ -34,22 +34,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     };
   });
 
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = React.useState({ width: 0, height: 0 });
   const [mounted, setMounted] = React.useState(false);
+
   React.useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 500);
-    return () => clearTimeout(timer);
+    setMounted(true);
+    if (!containerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0]) {
+        const { width, height } = entries[0].contentRect;
+        setDimensions({ width, height });
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, []);
 
-  if (!mounted) return <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-[500px] animate-fade-in" />;
+  if (!mounted) return <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 h-[500px] animate-fade-in" />;
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-[500px] flex flex-col animate-fade-in">
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 h-[500px] flex flex-col animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Frequência Operacional (01, 20, 22)</h3>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Número de Transações Diárias por Tipo</p>
+          <h3 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Frequência Operacional (01, 20, 22)</h3>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Número de Transações Diárias por Tipo</p>
         </div>
-        <div className="flex flex-wrap items-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+        <div className="flex flex-wrap items-center gap-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-slate-50 dark:bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-emerald-500 rounded"></span> Entrada</div>
           <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-red-500 rounded"></span> Saída</div>
           <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-purple-600 rounded"></span> Movimentos</div>
@@ -58,10 +71,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
 
       {/* Adicionada altura mínima e largura flexível para evitar warnings de renderização do Recharts */}
       <div
+        ref={containerRef}
         className="flex-1 w-full min-h-[350px] relative px-2 overflow-hidden"
-        style={{ minHeight: '350px', minWidth: '100px' }}
+        style={{ minHeight: '350px' }}
       >
-        {mounted && (
+        {mounted && dimensions.width > 0 && (
           <ResponsiveContainer width="100%" height="100%" debounce={100} aspect={2}>
             <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
@@ -124,11 +138,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
         )}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
-        <div className="text-[10px] font-bold text-slate-400">
+      <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">
+        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
           * Gráfico focado na frequência de registros nos armazéns principais (01, 20, 22).
         </div>
-        <div className="text-[10px] font-black text-primary-700 bg-primary-50 px-2 py-1 rounded">
+        <div className="text-[10px] font-black text-primary-700 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-2 py-1 rounded">
           FLUXO EXCLUSIVO (01, 20, 22)
         </div>
       </div>
