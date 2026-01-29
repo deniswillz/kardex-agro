@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Transaction, User as UserType } from './types';
 import {
-    loadTransactions, saveTransaction, saveTransactions, deleteTransaction, loadUsers, saveUsers,
+    loadTransactions, saveTransaction, saveTransactions, upsertTransactions, deleteTransaction, loadUsers, saveUsers,
     wipeTransactions, importBackupFromFile, exportBackupToFile, scheduleAutoBackup, subscribeToTransactions,
     createManualBackup, getBackups, restoreFromCloud, loadInventorySessions, saveInventorySessions,
     unlockAllSessions, broadcastLogoutAll, subscribeToSystemCommands
@@ -559,7 +559,14 @@ const App: React.FC = () => {
                         stockItems={stockItems}
                         onQuickAction={handleQuickAction}
                         transactions={transactions}
-                        onUpdateTransactions={async (updated) => { setTransactions(updated); await saveTransactions(updated); }}
+                        onUpdateTransactions={async (updated, changed) => {
+                            setTransactions(updated);
+                            if (changed && changed.length > 0) {
+                                await upsertTransactions(changed);
+                            } else {
+                                await saveTransactions(updated);
+                            }
+                        }}
                     />
                 )}
 

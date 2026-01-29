@@ -47,14 +47,12 @@ export const loadTransactions = async (): Promise<Transaction[]> => {
   }
 };
 
-export const saveTransactions = async (transactions: Transaction[]): Promise<void> => {
-  if (!isSupabaseConfigured()) {
-    console.warn('Supabase not configured');
-    return;
-  }
+// Upsert a batch of transactions (much more efficient than sending whole array)
+export const upsertTransactions = async (subset: Transaction[]): Promise<void> => {
+  if (!isSupabaseConfigured() || subset.length === 0) return;
 
   try {
-    const formatted = transactions.map(t => ({
+    const formatted = subset.map(t => ({
       id: t.id,
       date: t.date,
       code: t.code,
@@ -80,13 +78,18 @@ export const saveTransactions = async (transactions: Transaction[]): Promise<voi
       .upsert(formatted, { onConflict: 'id' });
 
     if (error) {
-      console.error('Save transactions error:', error);
+      console.error('Upsert transactions error:', error);
       throw error;
     }
   } catch (err) {
-    console.error('Save transactions failed:', err);
+    console.error('Upsert transactions failed:', err);
     throw err;
   }
+};
+
+export const saveTransactions = async (transactions: Transaction[]): Promise<void> => {
+  // Keep this for full sync/import, but use with caution
+  return upsertTransactions(transactions);
 };
 
 export const saveTransaction = async (transaction: Transaction): Promise<void> => {

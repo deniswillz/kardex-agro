@@ -8,7 +8,7 @@ interface StockBalanceProps {
   stockItems: InventoryItem[];
   onQuickAction: (code: string, warehouse: string, address?: string) => void;
   transactions: Transaction[];
-  onUpdateTransactions: (transactions: Transaction[]) => void;
+  onUpdateTransactions: (transactions: Transaction[], changedItems?: Transaction[]) => void;
 }
 
 const MAIN_WAREHOUSES = ['01', '20', '22'];
@@ -63,7 +63,7 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transac
         };
 
         const updated = [...transactions, newTx];
-        onUpdateTransactions(updated);
+        onUpdateTransactions(updated, [newTx]);
         setIsUploading(false);
       };
       reader.readAsDataURL(file);
@@ -75,16 +75,19 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transac
 
   const handleDeletePhoto = (photoToDelete: string) => {
     if (confirm('Deseja realmente apagar esta foto?')) {
+      const changed: Transaction[] = [];
       const updated = transactions.map(t => {
         if (t.code === item.code && t.photos && t.photos.includes(photoToDelete)) {
-          return {
+          const mod = {
             ...t,
             photos: t.photos.filter(p => p !== photoToDelete)
           };
+          changed.push(mod);
+          return mod;
         }
         return t;
       });
-      onUpdateTransactions(updated);
+      onUpdateTransactions(updated, changed);
     }
   };
 
