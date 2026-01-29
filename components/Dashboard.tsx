@@ -40,7 +40,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
 
   React.useEffect(() => {
     setMounted(true);
-    if (!containerRef.current) return;
+  }, []);
+
+  React.useEffect(() => {
+    if (!mounted || !containerRef.current) return;
 
     const observer = new ResizeObserver((entries) => {
       if (entries[0]) {
@@ -51,7 +54,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
 
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [mounted]);
 
   if (!mounted) return <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 h-[500px] animate-fade-in" />;
 
