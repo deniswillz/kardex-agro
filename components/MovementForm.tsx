@@ -126,14 +126,22 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           setOriginWarehouse(match.warehouse);
         }
         if (!address && !prefill?.address) setAddress(match.address || '');
-        if (match.photos && match.photos.length > 0) {
-          setPhotos(match.photos.slice(0, 2));
-        } else {
-          // If latest transaction has no photos, find the most recent one that has
-          const photoMatch = [...transactions]
-            .filter(t => t.code.toUpperCase() === code.toUpperCase() && t.photos && t.photos.length > 0)
-            .sort((a, b) => b.timestamp - a.timestamp)[0];
-          if (photoMatch) setPhotos(photoMatch.photos.slice(0, 2));
+
+        // Agregação de até 2 fotos exclusivas de todas as transações do SKU
+        const skuPhotos = new Set<string>();
+        [...transactions]
+          .filter(t => t.code.toUpperCase() === code.toUpperCase() && t.photos && t.photos.length > 0)
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .forEach(t => {
+            if (skuPhotos.size < 2) {
+              t.photos?.forEach(p => {
+                if (skuPhotos.size < 2) skuPhotos.add(p);
+              });
+            }
+          });
+
+        if (skuPhotos.size > 0) {
+          setPhotos(Array.from(skuPhotos));
         }
       }
     }
@@ -495,12 +503,17 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
             </div>
             <div className="grid grid-cols-2 gap-4">
               {photos.map((photo, idx) => (
-                <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden border-2 border-slate-100 group">
-                  <img src={photo} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden border-2 border-slate-100 group cursor-pointer">
+                  <img
+                    src={photo}
+                    alt={`Foto ${idx + 1}`}
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    onClick={() => setViewerIndex(idx)}
+                  />
                   <button
                     type="button"
-                    onClick={() => removePhoto(idx)}
-                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => { e.stopPropagation(); removePhoto(idx); }}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
                   >
                     <X size={14} />
                   </button>
