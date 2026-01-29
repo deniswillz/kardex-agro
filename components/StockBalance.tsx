@@ -49,9 +49,14 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
         map[key].minStock = t.minStock || 0;
         map[key].lastCount = t.date;
         if (t.photos && t.photos.length > 0) {
-          map[key].photos = t.photos;
+          // Para transações normais, mantém as fotos
+          // Para transações de SISTEMA, elas servem apenas para atualizar os metadados (fotos)
+          map[key].photos = [...(t.photos || []), ...(map[key].photos || [])].slice(0, 10);
         }
       }
+
+      // Se for SISTEMA, não altera saldo nem contagem, apenas as fotos (já processado acima)
+      if (t.operationType === 'SISTEMA') return;
 
       if (t.operationType === 'MOVIMENTACAO') {
         if (t.type === 'ENTRADA') {
@@ -106,14 +111,6 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
     }).sort((a, b) => a.warehouse.localeCompare(b.warehouse) || a.code.localeCompare(b.code));
   }, [transactions]);
 
-  const filteredData = stockData.filter(item => {
-    if (item.balance <= 0) return false;
-    const matchesSearch = item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesWarehouse = warehouseFilter === 'ALL' || item.warehouse === warehouseFilter;
-    return matchesSearch && matchesWarehouse;
-  });
-
   const handleSaveMin = async (code: string, newMin: number) => {
     const changed: Transaction[] = [];
     const updated = transactions.map(t => {
@@ -126,6 +123,38 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
     });
     onUpdateTransactions(updated, changed);
   };
+
+  const handleAddPhotos = async (code: string, newPhotos: string[]) => {
+    // Cria uma transação invisível de SISTEMA para persistir as fotos
+    const systemTransaction: Transaction = {
+      id: crypto.randomUUID(),
+      date: new Date().toISOString().split('T')[0],
+      timestamp: Date.now(),
+      code: code,
+      name: stockItems.find(i => i.code === code)?.name || 'Produto',
+      type: 'ENTRADA', // Valor dummy
+      operationType: 'SISTEMA',
+      quantity: 0,
+      unit: 'UN',
+      warehouse: '01', // Valor dummy
+      address: '',
+      photos: newPhotos,
+      minStock: 0,
+      responsible: 'SISTEMA'
+    };
+
+    await saveTransaction(systemTransaction);
+    // Dispara atualização local para refletir a foto no card imediatamente
+    onUpdateTransactions([...transactions, systemTransaction], [systemTransaction]);
+  };
+
+  const filteredData = stockData.filter(item => {
+    if (item.balance <= 0) return false;
+    const matchesSearch = item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesWarehouse = warehouseFilter === 'ALL' || item.warehouse === warehouseFilter;
+    return matchesSearch && matchesWarehouse;
+  });
 
   const formatDate = (dateStr?: string) => {
     return formatLocalDate(dateStr);
@@ -318,6 +347,7 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           onSaveMinStock={handleSaveMin}
+          onAddPhotos={handleAddPhotos}
         />
       )}
     </div>

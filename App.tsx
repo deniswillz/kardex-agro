@@ -112,7 +112,7 @@ const App: React.FC = () => {
     // Supabase Realtime - Atualiza automaticamente quando outro usuário faz mudanças
     useEffect(() => {
         const unsubscribe = subscribeToTransactions(() => {
-            console.log('Recebendo atualização em tempo real...');
+            // Sincronização em tempo real (sem logs para evitar flood)
             if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
             refreshTimerRef.current = setTimeout(() => {
                 refreshData(false); // Sincronização em tempo real não traz fotos por padrão para economizar banda/tempo

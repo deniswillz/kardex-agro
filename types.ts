@@ -1,6 +1,6 @@
 
 export type MovementType = 'ENTRADA' | 'SAIDA';
-export type OperationType = 'MOVIMENTACAO' | 'CONTAGEM';
+export type OperationType = 'MOVIMENTACAO' | 'CONTAGEM' | 'SISTEMA';
 export type UserProfile = 'ADMIN' | 'OPERADOR' | 'AUDITOR';
 
 export interface User {

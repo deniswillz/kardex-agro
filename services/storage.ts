@@ -685,13 +685,12 @@ export const subscribeToTransactions = (onUpdate: () => void): (() => void) => {
       'postgres_changes',
       { event: '*', schema: 'public', table: 'transactions' },
       (payload) => {
-        console.log('Realtime update:', payload.eventType);
-        // Chama callback para recarregar dados
+        // Recarrega dados de forma silenciosa e debouncada
         onUpdate();
       }
     )
     .subscribe((status) => {
-      console.log('Realtime subscription status:', status);
+      // Status da conexão mantido apenas no background
     });
 
   // Retorna função de cleanup

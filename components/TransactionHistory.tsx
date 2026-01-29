@@ -23,6 +23,9 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
 
   const filteredData = useMemo(() => {
     return transactions.filter(t => {
+      // Ignorar transações de sistema (metadados/fotos)
+      if (t.operationType === 'SISTEMA') return false;
+
       // Regra: Apenas armazéns 01, 20 e 22
       if (!MAIN_WAREHOUSES.includes(t.warehouse)) return false;
 

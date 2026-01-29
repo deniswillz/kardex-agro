@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Package, Ruler, MapPin, AlertTriangle, Save, Loader2, Image as ImageIcon, ArrowLeft, ArrowRightLeft } from 'lucide-react';
+import { X, Package, Ruler, MapPin, AlertTriangle, Save, Loader2, Image as ImageIcon, ArrowLeft, ArrowRightLeft, Camera, Trash2, Plus } from 'lucide-react';
 import { loadPhotosForProduct } from '../services/storage';
+import { compressImage } from '../services/imageUtils';
 
 interface ProductDetailModalProps {
     product: {
@@ -14,14 +15,17 @@ interface ProductDetailModalProps {
     };
     onClose: () => void;
     onSaveMinStock: (code: string, newMin: number) => Promise<void>;
+    onAddPhotos: (code: string, photos: string[]) => Promise<void>;
 }
 
-export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClose, onSaveMinStock }) => {
+export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClose, onSaveMinStock, onAddPhotos }) => {
     const [minStock, setMinStock] = useState(product.minStock);
     const [isSaving, setIsSaving] = useState(false);
     const [photos, setPhotos] = useState<string[]>(product.photos || []);
     const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
     const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const fetchPhotos = async () => {
@@ -49,6 +53,31 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
             console.error('Erro ao salvar estoque mínimo:', err);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        setIsUploading(true);
+        try {
+            const newPhotos: string[] = [];
+            for (let i = 0; i < files.length; i++) {
+                const compressed = await compressImage(files[i]);
+                newPhotos.push(compressed);
+            }
+
+            if (newPhotos.length > 0) {
+                await onAddPhotos(product.code, newPhotos);
+                setPhotos(prev => [...newPhotos, ...prev]);
+            }
+        } catch (err) {
+            console.error('Erro ao processar fotos:', err);
+            alert('Erro ao processar imagens. Tente fotos menores.');
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -120,7 +149,25 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     <div>
                         <div className="flex items-center justify-between mb-3">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fotos do Produto</p>
-                            {isLoadingPhotos && <Loader2 size={12} className="text-primary-600 animate-spin" />}
+                            <div className="flex items-center gap-2">
+                                {isLoadingPhotos || isUploading ? <Loader2 size={12} className="text-primary-600 animate-spin" /> : null}
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isUploading}
+                                    className="flex items-center gap-1.5 px-2 py-1 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg text-[9px] font-black uppercase hover:bg-primary-100 transition-colors"
+                                >
+                                    <Camera size={12} />
+                                    Adicionar Foto
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleFileChange}
+                                />
+                            </div>
                         </div>
 
                         {photos.length > 0 ? (

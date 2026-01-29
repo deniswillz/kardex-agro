@@ -18,8 +18,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
   });
 
   const chartData = lastDays.map(date => {
-    // Filtra transações do dia apenas para os armazéns principais
-    const dayMoves = transactions.filter(t => t.date === date && MAIN_WAREHOUSES.includes(t.warehouse));
+    // Filtra transações do dia apenas para os armazéns principais e ignora SISTEMA
+    const dayMoves = transactions.filter(t =>
+      t.date === date &&
+      MAIN_WAREHOUSES.includes(t.warehouse) &&
+      t.operationType !== 'SISTEMA'
+    );
 
     // Contagem de transações (frequência operacional)
     const entrada = dayMoves.filter(t => t.type === 'ENTRADA' && t.operationType === 'MOVIMENTACAO').length;
