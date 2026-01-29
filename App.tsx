@@ -50,7 +50,7 @@ const App: React.FC = () => {
             setIsLoading(true);
             try {
                 const [savedTransactions, savedUsers] = await Promise.all([
-                    loadTransactions(),
+                    loadTransactions(false),
                     loadUsers()
                 ]);
                 setTransactions(savedTransactions);

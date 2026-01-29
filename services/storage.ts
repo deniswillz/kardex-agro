@@ -3,15 +3,13 @@ import { supabase, isSupabaseConfigured } from './supabase';
 
 // ============ TRANSACTIONS (Supabase Only) ============
 
-export const loadTransactions = async (includePhotos: boolean = true): Promise<Transaction[]> => {
+export const loadTransactions = async (includePhotos: boolean = false): Promise<Transaction[]> => {
   if (!isSupabaseConfigured()) {
     console.warn('Supabase not configured');
     return [];
   }
 
   try {
-    // Se incluir fotos, ainda assim limitamos para evitar payloads gigantes que travam o Supabase
-    // A maioria das transações antigas não precisa da foto carregada o tempo todo
     const query = supabase
       .from('transactions')
       .select(includePhotos ? '*' : 'id, date, code, name, type, operation_type, quantity, unit, min_stock, warehouse, destination_warehouse, destination_address, address, responsible, timestamp, updated_at, updated_by')
@@ -47,6 +45,40 @@ export const loadTransactions = async (includePhotos: boolean = true): Promise<T
     })) || [];
   } catch (err) {
     console.error('Load transactions failed:', err);
+    return [];
+  }
+};
+
+/**
+ * Busca fotos específicas de um produto para carregamento sob demanda
+ */
+export const loadPhotosForProduct = async (code: string): Promise<string[]> => {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('photos')
+      .eq('code', code)
+      .not('photos', 'is', null)
+      .order('timestamp', { ascending: false });
+
+    if (error) {
+      console.error('Load photos error:', error);
+      return [];
+    }
+
+    // Coleta todas as fotos únicas encontradas nas transações desse produto
+    const photosSet = new Set<string>();
+    data?.forEach(row => {
+      if (Array.isArray(row.photos)) {
+        row.photos.forEach(p => photosSet.add(p));
+      }
+    });
+
+    return Array.from(photosSet);
+  } catch (err) {
+    console.error('Load photos failed:', err);
     return [];
   }
 };

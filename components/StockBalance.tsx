@@ -4,6 +4,7 @@ import { Search, Package, ArrowRight, AlertTriangle, MapPin, Edit3, Save, X, Arr
 import { saveTransaction } from '../services/storage';
 import { formatLocalDate } from '../services/dateUtils';
 import { compressImage } from '../services/imageUtils';
+import { ProductDetailModal } from './ProductDetailModal';
 
 interface StockBalanceProps {
   stockItems: InventoryItem[];
@@ -15,191 +16,10 @@ interface StockBalanceProps {
 
 const MAIN_WAREHOUSES = ['01', '20', '22'];
 
-interface ProductDetailsPopupProps {
-  item: InventoryItem;
-  transactions: Transaction[];
-  onClose: () => void;
-  onUpdateTransactions: (transactions: Transaction[]) => void;
-}
-
-const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transactions, onClose, onUpdateTransactions }) => {
-  const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Get all unique photos for this product from history
-  const productPhotos = useMemo(() => {
-    const photosSet = new Set<string>();
-    transactions
-      .filter(t => t.code === item.code && t.photos && t.photos.length > 0)
-      .forEach(t => t.photos.forEach(p => photosSet.add(p)));
-    return Array.from(photosSet);
-  }, [item.code, transactions]);
-
-  const handleAddPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Str = reader.result as string;
-        const compressed = await compressImage(base64Str, 800, 0.7);
-
-        // Create a new CONTAGEM transaction with the photo to save it in product history
-        const newTx: Transaction = {
-          id: crypto.randomUUID(),
-          date: new Date().toISOString().split('T')[0],
-          code: item.code,
-          name: item.name,
-          type: 'ENTRADA', // Neutral type for count
-          operationType: 'CONTAGEM',
-          quantity: item.balance, // Keep current balance
-          unit: item.unit,
-          minStock: item.minStock,
-          warehouse: item.warehouse,
-          address: item.address,
-          responsible: 'Sistema (Foto)',
-          photos: [compressed],
-          timestamp: Date.now()
-        };
-
-        const updated = [...transactions, newTx];
-        onUpdateTransactions(updated, [newTx]);
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error('Error adding photo:', error);
-      setIsUploading(false);
-    }
-  };
-
-  const handleDeletePhoto = (photoToDelete: string) => {
-    if (confirm('Deseja realmente apagar esta foto?')) {
-      const changed: Transaction[] = [];
-      const updated = transactions.map(t => {
-        if (t.code === item.code && t.photos && t.photos.includes(photoToDelete)) {
-          const mod = {
-            ...t,
-            photos: t.photos.filter(p => p !== photoToDelete)
-          };
-          changed.push(mod);
-          return mod;
-        }
-        return t;
-      });
-      onUpdateTransactions(updated, changed);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <div>
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight leading-none mb-1">{item.name}</h3>
-            <p className="text-xs font-mono text-slate-500 uppercase tracking-tighter">{item.code}</p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
-            <X size={24} />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 overflow-y-auto no-scrollbar space-y-6">
-          {/* Info Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo Total</p>
-              <p className="text-lg font-black text-slate-900 break-words">{item.balance} <span className="text-xs uppercase">{item.unit}</span></p>
-            </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Localização</p>
-              <p className="text-xs font-black text-slate-900 uppercase break-words leading-tight">{item.warehouse} - {item.address || 'Geral'}</p>
-            </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Estoque Mín.</p>
-              <p className="text-lg font-black text-slate-900">{item.minStock || 0}</p>
-            </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Últ. Contagem</p>
-              <p className="text-xs font-black text-slate-900">{formatLocalDate(item.lastCount)}</p>
-            </div>
-          </div>
-
-          {/* Photos Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                <Camera size={14} /> Galeria de Fotos
-              </h4>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="flex items-center gap-2 px-3 py-1.5 bg-primary-50 text-primary-600 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-primary-100 transition-all disabled:opacity-50"
-              >
-                {isUploading ? 'Subindo...' : <><Plus size={14} /> Adicionar</>}
-              </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleAddPhoto}
-                accept="image/*"
-                className="hidden"
-              />
-            </div>
-
-            {productPhotos.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pb-4">
-                {productPhotos.map((photo, idx) => (
-                  <div
-                    key={idx}
-                    className="aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 cursor-pointer hover:border-primary-500 transition-all shadow-sm group relative"
-                  >
-                    <img src={photo} alt={`Produto ${idx}`} className="w-full h-full object-cover" onClick={() => setExpandedPhoto(photo)} />
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeletePhoto(photo); }}
-                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-slate-50 rounded-2xl p-12 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-100">
-                <Camera size={48} className="mb-2 opacity-20" />
-                <p className="text-[10px] font-black uppercase tracking-widest">Nenhuma foto encontrada</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Expanded Photo Overlay */}
-      {expandedPhoto && (
-        <div
-          className="fixed inset-0 bg-black/95 z-[120] flex items-center justify-center p-4 cursor-zoom-out animate-fade-in"
-          onClick={() => setExpandedPhoto(null)}
-        >
-          <button className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
-            <X size={32} />
-          </button>
-          <img src={expandedPhoto} alt="Zoom" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
-        </div>
-      )}
-    </div>
-  );
-};
-
+// Removida a implementação antiga do ProductDetailsPopup para usar o novo ProductDetailModal
 export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickAction, transactions, onUpdateTransactions, isRefreshing }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('ALL');
-  const [editingCode, setEditingCode] = useState<string | null>(null);
-  const [tempMin, setTempMin] = useState<number>(0);
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
 
   const stockData = useMemo(() => {
@@ -294,25 +114,17 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
     return matchesSearch && matchesWarehouse;
   });
 
-  const handleStartEdit = (code: string, currentMin: number) => {
-    setEditingCode(code);
-    setTempMin(currentMin);
-  };
-
-  const handleSaveMin = async () => {
-    if (editingCode !== null) {
-      const changed: Transaction[] = [];
-      const updated = transactions.map(t => {
-        if (t.code === editingCode) {
-          const mod = { ...t, minStock: tempMin };
-          changed.push(mod);
-          return mod;
-        }
-        return t;
-      });
-      onUpdateTransactions(updated, changed);
-      setEditingCode(null);
-    }
+  const handleSaveMin = async (code: string, newMin: number) => {
+    const changed: Transaction[] = [];
+    const updated = transactions.map(t => {
+      if (t.code === code) {
+        const mod = { ...t, minStock: newMin };
+        changed.push(mod);
+        return mod;
+      }
+      return t;
+    });
+    onUpdateTransactions(updated, changed);
   };
 
   const formatDate = (dateStr?: string) => {
@@ -415,7 +227,7 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
                   </div>
                 </td>
                 <td className="px-4 py-4 text-center">
-                  <button onClick={() => handleStartEdit(item.code, item.minStock)} className="text-xs font-black text-slate-700 hover:text-primary-600 border-b border-dotted border-slate-300">
+                  <button onClick={() => setSelectedProduct(item)} className="text-xs font-black text-slate-700 hover:text-primary-600 border-b border-dotted border-slate-300">
                     {item.minStock}
                   </button>
                 </td>
@@ -499,27 +311,13 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
         )}
       </div>
 
-      {editingCode && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl animate-slide-up">
-            <h3 className="text-xs font-black text-slate-800 uppercase mb-4 tracking-widest text-center">Nível de Reposição</h3>
-            <div className="space-y-4">
-              <input type="number" value={tempMin} onChange={(e) => setTempMin(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-lg font-black outline-none focus:border-primary-500" autoFocus />
-              <div className="flex gap-2">
-                <button onClick={() => setEditingCode(null)} className="flex-1 py-3 text-[10px] font-black uppercase text-slate-500 hover:bg-slate-100 rounded-xl">Cancelar</button>
-                <button onClick={handleSaveMin} className="flex-[2] py-3 bg-primary-600 text-white font-black text-[10px] uppercase rounded-xl shadow-lg">Salvar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal de edição de mínimo legado removido em favor do ProductDetailModal */}
 
       {selectedProduct && (
-        <ProductDetailsPopup
-          item={selectedProduct}
-          transactions={transactions}
+        <ProductDetailModal
+          product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onUpdateTransactions={onUpdateTransactions}
+          onSaveMinStock={handleSaveMin}
         />
       )}
     </div>
