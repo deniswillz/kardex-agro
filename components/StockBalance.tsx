@@ -125,9 +125,17 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
   };
 
   const handleAddPhotos = async (code: string, newPhotos: string[]) => {
+    const generateId = () => {
+      try {
+        return crypto.randomUUID();
+      } catch (e) {
+        return Math.random().toString(36).substring(2) + Date.now().toString(36);
+      }
+    };
+
     // Cria uma transação invisível de SISTEMA para persistir as fotos
     const systemTransaction: Transaction = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       date: new Date().toISOString().split('T')[0],
       timestamp: Date.now(),
       code: code,

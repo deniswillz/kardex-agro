@@ -50,9 +50,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     if (!mounted || !containerRef.current) return;
 
     const observer = new ResizeObserver((entries) => {
-      if (entries[0]) {
-        const { width, height } = entries[0].contentRect;
-        setDimensions({ width, height });
+      if (!entries[0]) return;
+
+      const { width, height } = entries[0].contentRect;
+      if (width > 0 && height > 0) {
+        // Debounce para evitar flashes e erros durante animações de redimensionamento
+        requestAnimationFrame(() => {
+          setDimensions({ width, height: Math.max(height, 500) });
+        });
       }
     });
 
@@ -60,10 +65,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     return () => observer.disconnect();
   }, [mounted]);
 
-  if (!mounted) return <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 h-[500px] animate-fade-in" />;
+  const isLoading = !mounted || dimensions.width === 0;
+
+  if (isLoading) return <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 h-[500px] animate-pulse flex items-center justify-center text-slate-400 font-bold uppercase text-[10px] tracking-widest">Calculando dimensões...</div>;
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 h-[500px] flex flex-col animate-fade-in">
+    <div
+      ref={containerRef}
+      className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 animate-fade-in relative overflow-hidden"
+    >
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h3 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Frequência Operacional (01, 20, 22)</h3>
@@ -77,72 +87,66 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       </div>
 
       {/* Adicionada altura mínima e largura flexível para evitar warnings de renderização do Recharts */}
-      <div
-        ref={containerRef}
-        className="flex-1 w-full min-h-[350px] relative px-2 overflow-hidden"
-        style={{ minHeight: '350px' }}
-      >
-        {mounted && dimensions.width > 0 && (
-          <ResponsiveContainer width="100%" height="100%" debounce={100} aspect={2}>
-            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
-              <XAxis
-                dataKey="name"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 9, fontWeight: 800, fill: '#94a3b8' }}
-                dy={15}
-                interval={0}
-                padding={{ left: 20, right: 20 }}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 9, fontWeight: 800, fill: '#94a3b8' }}
-                dx={-10}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  borderRadius: '16px',
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                  padding: '12px',
-                  backdropFilter: 'blur(8px)'
-                }}
-                labelStyle={{ fontWeight: 900, marginBottom: '8px', color: '#1e293b', fontSize: '11px', textTransform: 'uppercase' }}
-                itemStyle={{ fontSize: '10px', fontWeight: 700, padding: '2px 0' }}
-              />
-              <Line
-                type="monotone"
-                dataKey="Entrada"
-                stroke="#10b981"
-                strokeWidth={4}
-                dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
-                activeDot={{ r: 6, strokeWidth: 0 }}
-                name="Entradas"
-              />
-              <Line
-                type="monotone"
-                dataKey="Saida"
-                stroke="#ef4444"
-                strokeWidth={4}
-                dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }}
-                activeDot={{ r: 6, strokeWidth: 0 }}
-                name="Saídas"
-              />
-              <Line
-                type="monotone"
-                dataKey="Movimentos"
-                stroke="#8b5cf6"
-                strokeWidth={4}
-                dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#fff' }}
-                activeDot={{ r: 6, strokeWidth: 0 }}
-                name="Movimentações"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
+      <div style={{ width: '100%', height: 420 }}>
+        <ResponsiveContainer width="100%" height="100%" debounce={50}>
+          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
+            <XAxis
+              dataKey="name"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 9, fontWeight: 800, fill: '#94a3b8' }}
+              dy={15}
+              interval={0}
+              padding={{ left: 20, right: 20 }}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 9, fontWeight: 800, fill: '#94a3b8' }}
+              dx={-10}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                padding: '12px',
+                backdropFilter: 'blur(8px)'
+              }}
+              labelStyle={{ fontWeight: 900, marginBottom: '8px', color: '#1e293b', fontSize: '11px', textTransform: 'uppercase' }}
+              itemStyle={{ fontSize: '10px', fontWeight: 700, padding: '2px 0' }}
+            />
+            <Line
+              type="monotone"
+              dataKey="Entrada"
+              stroke="#10b981"
+              strokeWidth={4}
+              dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+              activeDot={{ r: 6, strokeWidth: 0 }}
+              name="Entradas"
+            />
+            <Line
+              type="monotone"
+              dataKey="Saida"
+              stroke="#ef4444"
+              strokeWidth={4}
+              dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }}
+              activeDot={{ r: 6, strokeWidth: 0 }}
+              name="Saídas"
+            />
+            <Line
+              type="monotone"
+              dataKey="Movimentos"
+              stroke="#8b5cf6"
+              strokeWidth={4}
+              dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#fff' }}
+              activeDot={{ r: 6, strokeWidth: 0 }}
+              name="Movimentações"
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">

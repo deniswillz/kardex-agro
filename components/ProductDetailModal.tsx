@@ -60,11 +60,21 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
+        const fileToDataURL = (file: File): Promise<string> => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        };
+
         setIsUploading(true);
         try {
             const newPhotos: string[] = [];
             for (let i = 0; i < files.length; i++) {
-                const compressed = await compressImage(files[i]);
+                const dataUrl = await fileToDataURL(files[i]);
+                const compressed = await compressImage(dataUrl);
                 newPhotos.push(compressed);
             }
 
