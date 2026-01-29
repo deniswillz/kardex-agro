@@ -51,6 +51,7 @@ export interface InventoryItem {
   isDivergent: boolean; // True if balance != lastCountQuantity
   entries: number;
   exits: number;
+  photos?: string[];
 }
 
 export interface InventorySessionItem {

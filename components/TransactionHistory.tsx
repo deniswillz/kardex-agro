@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Transaction, WAREHOUSES, OperationType } from '../types';
 import { Search, Trash2, MapPin, Calendar, User, Pencil, Filter, FileText, AlertCircle, ArrowUpRight, ArrowDownLeft, ClipboardCheck, MoveRight } from 'lucide-react';
+import { formatLocalDate } from '../services/dateUtils';
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
@@ -119,7 +120,10 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
                 <td className="px-6 py-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 overflow-hidden">
-                      {t.photos?.[0] ? <img src={t.photos[0]} alt="" className="h-full w-full object-cover" /> : <FileText className="text-slate-400" size={20} />}
+                      {(() => {
+                        const photo = t.photos?.[0] || transactions.find(tx => tx.code === t.code && tx.photos?.length > 0)?.photos?.[0];
+                        return photo ? <img src={photo} alt="" className="h-full w-full object-cover" /> : <FileText className="text-slate-400" size={20} />;
+                      })()}
                     </div>
                     <div className="ml-4">
                       <div className="text-xs font-black text-slate-900 uppercase tracking-tight">{t.name}</div>
@@ -154,7 +158,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600">
                       <Calendar size={12} className="text-slate-400" />
-                      {new Date(t.date).toLocaleDateString('pt-BR')}
+                      {formatLocalDate(t.date)}
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] font-black text-primary-700 uppercase">
                       <User size={12} className="text-primary-400" />
@@ -179,8 +183,11 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
             <div key={t.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm active:bg-slate-50 transition-colors">
               <div className="p-4 flex items-center justify-between border-b border-slate-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 text-slate-400">
-                    {t.photos?.[0] ? <img src={t.photos[0]} className="w-full h-full object-cover rounded-lg" /> : <FileText size={18} />}
+                  <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 text-slate-400 overflow-hidden">
+                    {(() => {
+                      const photo = t.photos?.[0] || transactions.find(tx => tx.code === t.code && tx.photos?.length > 0)?.photos?.[0];
+                      return photo ? <img src={photo} className="w-full h-full object-cover" /> : <FileText size={18} />;
+                    })()}
                   </div>
                   <div>
                     <h4 className="text-xs font-black text-slate-800 uppercase leading-none mb-1">{t.name}</h4>
@@ -215,7 +222,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600">
                         <Calendar size={10} className="text-slate-400" />
-                        {new Date(t.date).toLocaleDateString('pt-BR')}
+                        {formatLocalDate(t.date)}
                       </div>
                       <div className="flex items-center gap-1.5 text-[10px] font-black text-primary-700 uppercase">
                         <User size={10} className="text-primary-400" />

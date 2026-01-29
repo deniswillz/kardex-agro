@@ -125,6 +125,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           setOriginWarehouse(match.warehouse);
         }
         if (!address && !prefill?.address) setAddress(match.address || '');
+        if (match.photos && match.photos.length > 0) setPhotos(match.photos);
       }
     }
   }, [code, type, transactions, prefill]);

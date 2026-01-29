@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Transaction, InventoryItem, WAREHOUSES } from '../types';
 import { Search, Package, ArrowRight, AlertTriangle, MapPin, Edit3, Save, X, ArrowUpCircle, ArrowDownCircle, ClipboardList, MoveHorizontal, PackageSearch, Clock, Calendar, Camera, Plus, Trash2 } from 'lucide-react';
 import { saveTransaction } from '../services/storage';
+import { formatLocalDate } from '../services/dateUtils';
 
 interface StockBalanceProps {
   stockItems: InventoryItem[];
@@ -119,7 +120,7 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({ item, transac
             </div>
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Últ. Contagem</p>
-              <p className="text-xs font-black text-slate-900">{item.lastCount ? new Date(item.lastCount).toLocaleDateString() : '--'}</p>
+              <p className="text-xs font-black text-slate-900">{formatLocalDate(item.lastCount)}</p>
             </div>
           </div>
 
@@ -208,17 +209,19 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
       if (!map[key]) {
         map[key] = {
           key, code: t.code, name: t.name, warehouse: t.warehouse, address: t.address || '',
-          unit: t.unit || 'UN', balance: 0, minStock: t.minStock || 0,
-          lastCount: t.date, isCritical: false, isDivergent: false,
-          entries: 0, exits: 0, lastEntry: undefined, lastExit: undefined
+          photos: t.photos || [],
         };
       }
 
       // Atualiza metadados se a transação for mais recente
-      if (t.timestamp > new Date(map[key].lastCount).getTime()) {
+      const currentLastCountTs = map[key].lastCount ? new Date(map[key].lastCount).getTime() : 0;
+      if (t.timestamp > currentLastCountTs) {
         map[key].name = t.name;
         map[key].minStock = t.minStock || 0;
         map[key].lastCount = t.date;
+        if (t.photos && t.photos.length > 0) {
+          map[key].photos = t.photos;
+        }
       }
 
       if (t.operationType === 'MOVIMENTACAO') {
@@ -298,9 +301,7 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
   };
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '--';
-    const [year, month, day] = dateStr.split('-');
-    return `${day}/${month}/${year.substring(2)}`;
+    return formatLocalDate(dateStr);
   };
 
   return (
@@ -352,10 +353,10 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setSelectedProduct(item)}
-                      className={`p-2 rounded-lg border transition-all hover:scale-105 active:scale-95 ${item.isCritical ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'}`}
+                      className={`w-10 h-10 rounded-lg border transition-all hover:scale-105 active:scale-95 flex items-center justify-center overflow-hidden ${item.isCritical ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'}`}
                       title="Ver detalhes e fotos"
                     >
-                      <Package size={20} />
+                      {item.photos?.[0] ? <img src={item.photos[0]} className="w-full h-full object-cover" /> : <Package size={20} />}
                     </button>
                     <div>
                       <div className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{item.name}</div>
@@ -420,9 +421,9 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setSelectedProduct(item)}
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-all active:scale-90 ${item.isCritical ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-all active:scale-90 overflow-hidden ${item.isCritical ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
                   >
-                    <Package size={18} />
+                    {item.photos?.[0] ? <img src={item.photos[0]} className="w-full h-full object-cover" /> : <Package size={18} />}
                   </button>
                   <div className="flex-1 min-w-0">
                     <h4 className={`text-xs font-black uppercase leading-tight mb-1 break-words line-clamp-2 ${item.isCritical ? 'text-red-700' : 'text-slate-800'}`}>{item.name}</h4>

@@ -41,12 +41,16 @@ export const useStockCalculation = (transactions: Transaction[]): UseStockCalcul
           isDivergent: false,
           entries: 0,
           exits: 0,
+          photos: t.photos || [],
         };
       }
 
       if (t.timestamp > new Date(map[key].lastCount).getTime()) {
         map[key].name = t.name;
         map[key].minStock = t.minStock || 0;
+        if (t.photos && t.photos.length > 0) {
+          map[key].photos = t.photos;
+        }
       }
 
       if (t.operationType === 'MOVIMENTACAO') {
