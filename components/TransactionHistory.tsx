@@ -18,6 +18,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
 
   const filteredData = useMemo(() => {
     return transactions.filter(t => {
@@ -36,8 +37,13 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
       const matchesEnd = !endDate || txDate <= new Date(endDate);
 
       return matchesSearch && matchesOp && matchesStart && matchesEnd;
-    }).sort((a, b) => b.timestamp - a.timestamp);
-  }, [transactions, searchTerm, filterOp, startDate, endDate]);
+    }).sort((a, b) => {
+      if (sortOrder === 'ASC') {
+        return a.timestamp - b.timestamp;
+      }
+      return b.timestamp - a.timestamp;
+    });
+  }, [transactions, searchTerm, filterOp, startDate, endDate, sortOrder]);
 
   const getOpBadge = (t: Transaction) => {
     if (t.operationType === 'CONTAGEM') {
@@ -72,6 +78,13 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <button
+              onClick={() => setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC')}
+              className={`p-2 rounded-lg border transition-all flex items-center gap-2 text-xs font-black uppercase tracking-tighter ${sortOrder === 'ASC' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+              title={sortOrder === 'ASC' ? "Antigas → Novas (A-Z)" : "Novas → Antigas (Z-A)"}
+            >
+              {sortOrder === 'ASC' ? 'A → Z' : 'Z → A'}
+            </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`p-2 rounded-lg border transition-all flex items-center gap-2 text-xs font-bold ${showFilters ? 'bg-primary-600 border-primary-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}

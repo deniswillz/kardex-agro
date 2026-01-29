@@ -56,28 +56,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       </div>
 
       {/* Adicionada altura mínima e largura flexível para evitar warnings de renderização do Recharts */}
-      <div className="flex-1 w-full min-h-[300px] relative">
-        <ResponsiveContainer width="100%" height="100%" aspect={2}>
-          <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+      <div className="flex-1 w-full min-h-[350px] relative px-2">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
             <XAxis
               dataKey="name"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 9, fontWeight: 800, fill: '#94a3b8' }}
-              dy={10}
+              dy={15}
+              interval={0}
+              padding={{ left: 20, right: 20 }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 9, fontWeight: 800, fill: '#94a3b8' }}
+              dx={-10}
             />
             <Tooltip
               contentStyle={{
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 borderRadius: '16px',
                 border: '1px solid #e2e8f0',
                 boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                padding: '12px'
+                padding: '12px',
+                backdropFilter: 'blur(8px)'
               }}
               labelStyle={{ fontWeight: 900, marginBottom: '8px', color: '#1e293b', fontSize: '11px', textTransform: 'uppercase' }}
               itemStyle={{ fontSize: '10px', fontWeight: 700, padding: '2px 0' }}
@@ -86,28 +91,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
               type="monotone"
               dataKey="Entrada"
               stroke="#10b981"
-              strokeWidth={3}
+              strokeWidth={4}
               dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
               activeDot={{ r: 6, strokeWidth: 0 }}
-              name="Transações Entrada"
+              name="Entradas"
             />
             <Line
               type="monotone"
               dataKey="Saida"
               stroke="#ef4444"
-              strokeWidth={3}
+              strokeWidth={4}
               dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }}
               activeDot={{ r: 6, strokeWidth: 0 }}
-              name="Transações Saída"
+              name="Saídas"
             />
             <Line
               type="monotone"
               dataKey="Movimentos"
               stroke="#8b5cf6"
-              strokeWidth={3}
+              strokeWidth={4}
               dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#fff' }}
               activeDot={{ r: 6, strokeWidth: 0 }}
-              name="Total Operações"
+              name="Movimentações"
             />
           </LineChart>
         </ResponsiveContainer>
