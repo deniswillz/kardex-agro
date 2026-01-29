@@ -209,6 +209,9 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
       if (!map[key]) {
         map[key] = {
           key, code: t.code, name: t.name, warehouse: t.warehouse, address: t.address || '',
+          unit: t.unit || 'UN', balance: 0, minStock: t.minStock || 0,
+          lastCount: t.date, isCritical: false, isDivergent: false,
+          entries: 0, exits: 0, lastEntry: undefined, lastExit: undefined,
           photos: t.photos || [],
         };
       }

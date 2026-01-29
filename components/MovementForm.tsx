@@ -125,7 +125,15 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           setOriginWarehouse(match.warehouse);
         }
         if (!address && !prefill?.address) setAddress(match.address || '');
-        if (match.photos && match.photos.length > 0) setPhotos(match.photos);
+        if (match.photos && match.photos.length > 0) {
+          setPhotos(match.photos);
+        } else {
+          // If latest transaction has no photos, find the most recent one that has
+          const photoMatch = [...transactions]
+            .filter(t => t.code.toUpperCase() === code.toUpperCase() && t.photos && t.photos.length > 0)
+            .sort((a, b) => b.timestamp - a.timestamp)[0];
+          if (photoMatch) setPhotos(photoMatch.photos);
+        }
       }
     }
   }, [code, type, transactions, prefill]);
