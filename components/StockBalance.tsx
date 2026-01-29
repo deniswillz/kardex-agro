@@ -55,8 +55,8 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
         }
       }
 
-      // Se for SISTEMA, não altera saldo nem contagem, apenas as fotos (já processado acima)
-      if (t.operationType === 'SISTEMA') return;
+      // Se for uma transação silenciosa de sistema (foto), não altera saldo nem contagem
+      if (t.quantity === 0 && t.responsible === 'SISTEMA') return;
 
       if (t.operationType === 'MOVIMENTACAO') {
         if (t.type === 'ENTRADA') {
@@ -140,11 +140,11 @@ export const StockBalance: React.FC<StockBalanceProps> = ({ stockItems, onQuickA
       timestamp: Date.now(),
       code: code,
       name: stockItems.find(i => i.code === code)?.name || 'Produto',
-      type: 'ENTRADA', // Valor dummy
-      operationType: 'SISTEMA',
+      type: 'ENTRADA',
+      operationType: 'MOVIMENTACAO',
       quantity: 0,
       unit: 'UN',
-      warehouse: '01', // Valor dummy
+      warehouse: '01',
       address: '',
       photos: newPhotos,
       minStock: 0,

@@ -22,7 +22,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     const dayMoves = transactions.filter(t =>
       t.date === date &&
       MAIN_WAREHOUSES.includes(t.warehouse) &&
-      t.operationType !== 'SISTEMA'
+      !(t.quantity === 0 && t.responsible === 'SISTEMA')
     );
 
     // Contagem de transações (frequência operacional)
