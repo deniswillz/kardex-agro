@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Package, Ruler, MapPin, AlertTriangle, Save, Loader2, Image as ImageIcon } from 'lucide-react';
+import { X, Package, Ruler, MapPin, AlertTriangle, Save, Loader2, Image as ImageIcon, ArrowLeft, ArrowRightLeft } from 'lucide-react';
 import { loadPhotosForProduct } from '../services/storage';
 
 interface ProductDetailModalProps {
@@ -21,6 +21,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     const [isSaving, setIsSaving] = useState(false);
     const [photos, setPhotos] = useState<string[]>(product.photos || []);
     const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
+    const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
     useEffect(() => {
         const fetchPhotos = async () => {
@@ -130,7 +131,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                                             src={photo}
                                             alt={`Produto ${idx + 1}`}
                                             className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                                            onClick={() => window.open(photo, '_blank')}
+                                            onClick={() => setViewerIndex(idx)}
                                         />
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                                             <ImageIcon size={16} className="text-white" />
@@ -165,6 +166,46 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     </button>
                 </div>
             </div>
+
+            {/* Modal Visualizador de Fotos */}
+            {viewerIndex !== null && (
+                <div className="fixed inset-0 bg-black/95 z-[150] flex items-center justify-center p-4 animate-fade-in shadow-2xl">
+                    <button onClick={() => setViewerIndex(null)} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-[160]">
+                        <X size={32} />
+                    </button>
+
+                    {/* Navegação */}
+                    {photos.length > 1 && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setViewerIndex(prev => prev === 0 ? photos.length - 1 : (prev || 0) - 1); }}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-[160] shadow-xl"
+                            >
+                                <ArrowLeft size={32} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setViewerIndex(prev => (prev || 0) === photos.length - 1 ? 0 : (prev || 0) + 1); }}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-[160] shadow-xl"
+                            >
+                                <ArrowRightLeft size={32} className="rotate-[-45deg]" />
+                            </button>
+                        </>
+                    )}
+
+                    <div className="max-w-full max-h-full flex flex-col items-center gap-4 animate-slide-up">
+                        <img
+                            src={photos[viewerIndex]}
+                            className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+                            alt="Visualização"
+                        />
+                        <div className="bg-white/10 px-6 py-2 rounded-full text-white font-black text-[10px] uppercase tracking-[0.3em] backdrop-blur-md">
+                            Foto {viewerIndex + 1} de {photos.length}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

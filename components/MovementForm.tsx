@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, QrCode, X, Save, ArrowLeft, User, Calendar, MapPin, Hash, Package, AlertCircle, ArrowRightLeft, Send, LogOut, AlertTriangle, CheckCircle, Lock } from 'lucide-react';
+import { Camera, QrCode, X, Save, ArrowLeft, User, Calendar, MapPin, Hash, Package, AlertCircle, ArrowRightLeft, Send, LogOut, AlertTriangle, CheckCircle, Lock, Image as ImageIcon } from 'lucide-react';
 import { Transaction, MovementType, OperationType, WAREHOUSES, User as UserType } from '../types';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 
@@ -41,6 +41,7 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
   const [currentStock, setCurrentStock] = useState<number | null>(null);
   const [alertModal, setAlertModal] = useState<AlertModal>({ show: false, type: 'error', title: '', message: '' });
   const [showQrScanner, setShowQrScanner] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
 
   const showAlert = (type: 'error' | 'warning' | 'success', title: string, message: string) => {
@@ -126,13 +127,13 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
         }
         if (!address && !prefill?.address) setAddress(match.address || '');
         if (match.photos && match.photos.length > 0) {
-          setPhotos(match.photos);
+          setPhotos(match.photos.slice(0, 2));
         } else {
           // If latest transaction has no photos, find the most recent one that has
           const photoMatch = [...transactions]
             .filter(t => t.code.toUpperCase() === code.toUpperCase() && t.photos && t.photos.length > 0)
             .sort((a, b) => b.timestamp - a.timestamp)[0];
-          if (photoMatch) setPhotos(photoMatch.photos);
+          if (photoMatch) setPhotos(photoMatch.photos.slice(0, 2));
         }
       }
     }
@@ -356,16 +357,33 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
           </div>
         </div>
 
-        {/* DESCRIPTION */}
-        <div>
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Descrição Técnica *</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3.5 text-sm font-bold text-slate-700 outline-none focus:border-primary-500 focus:bg-white transition-all"
-            required
-          />
+        {/* DESCRIPTION & PREVIEW */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+          <div className="md:col-span-3">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Descrição Técnica *</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3.5 text-sm font-bold text-slate-700 outline-none focus:border-primary-500 focus:bg-white transition-all uppercase"
+              required
+            />
+          </div>
+          <div className="flex gap-2 h-full items-end">
+            {photos.map((photo, idx) => (
+              <div key={idx} className="w-14 h-14 rounded-xl border-2 border-slate-100 overflow-hidden shadow-sm relative group cursor-pointer" onClick={() => setViewerIndex(idx)}>
+                <img src={photo} className="w-full h-full object-cover" alt="Preview" />
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Send size={12} className="text-white rotate-[-45deg]" />
+                </div>
+              </div>
+            ))}
+            {photos.length === 0 && (
+              <div className="w-14 h-14 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 bg-slate-50/50">
+                <ImageIcon size={20} />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* QUANTITY */}
@@ -611,6 +629,45 @@ export const MovementForm: React.FC<MovementFormProps> = ({ onAdd, onUpdate, onC
               >
                 Cancelar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Visualizador de Fotos */}
+      {viewerIndex !== null && (
+        <div className="fixed inset-0 bg-black/95 z-[150] flex items-center justify-center p-4 animate-fade-in shadow-2xl">
+          <button onClick={() => setViewerIndex(null)} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-[160]">
+            <X size={32} />
+          </button>
+
+          {/* Navegação */}
+          {photos.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setViewerIndex(prev => prev === 0 ? photos.length - 1 : (prev || 0) - 1); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-[160] shadow-xl"
+              >
+                <ArrowLeft size={32} />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setViewerIndex(prev => (prev || 0) === photos.length - 1 ? 0 : (prev || 0) + 1); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-[160] shadow-xl"
+              >
+                <ArrowRightLeft size={32} className="rotate-[-45deg]" />
+              </button>
+            </>
+          )}
+
+          <div className="max-w-full max-h-full flex flex-col items-center gap-4 animate-slide-up">
+            <img
+              src={photos[viewerIndex]}
+              className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+              alt="Visualização"
+            />
+            <div className="bg-white/10 px-6 py-2 rounded-full text-white font-black text-[10px] uppercase tracking-[0.3em] backdrop-blur-md">
+              Foto {viewerIndex + 1} de {photos.length}
             </div>
           </div>
         </div>
